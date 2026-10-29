@@ -957,38 +957,124 @@
     return { code: si.code, name: si.name, inferred: false, supp: true };
   }
 
+  // ============================================================
+  // 列识别：兼容多种清单格式
+  //   A序号/B项目名称/C数量（标准）
+  //   A项目名称/B单位/C数量（老风口风阀模板，无序号列）
+  //   A序号/B名称/C型号/D单位/E数量 ……
+  // ============================================================
+  var UNIT_WORDS = /^(个|台|套|组|根|樘|座|块|节|片|只|副|米|m|m2|m²|㎡|kg|吨|项|处|系统|段)$/i;
+
+  function cellText(v) { return (v === undefined || v === null) ? '' : String(v).trim(); }
+  function isNumCell(v) {
+    if (typeof v === 'number') return isFinite(v);
+    return /^\s*-?\d+(\.\d+)?\s*$/.test(String(v === undefined || v === null ? '' : v));
+  }
+  function looksUnit(v) { return UNIT_WORDS.test(cellText(v)); }
+  // 单位规范化：m2/㎡/米 → m²/m
+  function normUnit(u) {
+    var t = cellText(u);
+    var map = { 'm2': 'm²', 'M2': 'm²', '㎡': 'm²', 'm²': 'm²', '平方米': 'm²', '米': 'm', 'm': 'm' };
+    return map[t] || t;
+  }
+  function hasCn(v) { return /[\u4e00-\u9fa5]/.test(cellText(v)); }
+
+  function detectColumns(aoa) {
+    var res = { name: -1, qty: -1, seq: -1, unit: -1, start: 0 };
+    var limit = Math.min(aoa.length, 8);
+    for (var r = 0; r < limit; r++) {
+      var row = aoa[r] || [];
+      var m = { name: -1, qty: -1, seq: -1, unit: -1 };
+      for (var c = 0; c < row.length; c++) {
+        var t = cellText(row[c]);
+        if (!t || t.length > 12) continue;
+        if (m.name < 0 && /名称|项目内容/.test(t)) m.name = c;
+        if (m.qty < 0 && /数量|工程量/.test(t)) m.qty = c;
+        if (m.seq < 0 && /序号|编号/.test(t)) m.seq = c;
+        if (m.unit < 0 && /^单位$/.test(t)) m.unit = c;
+      }
+      if (m.name >= 0) {
+        res.name = m.name; res.qty = m.qty; res.seq = m.seq; res.unit = m.unit; res.start = r + 1;
+        return res;
+      }
+    }
+    return res;
+  }
+
+  // 无表头时逐行判定名称列：优先能识别出类别的单元格，其次含中文的非数字单元格
+  function pickNameCell(row) {
+    var best = -1, bestScore = 0, n = Math.min(row.length, 6);
+    for (var c = 0; c < n; c++) {
+      var t = cellText(row[c]);
+      if (!t) continue;
+      if (looksUnit(t)) continue;
+      var sc = 0;
+      if (classify(t)) sc = 3;
+      else if (hasCn(t) && !isNumCell(t)) sc = 2;
+      else if (!isNumCell(t)) sc = 1;
+      if (sc > bestScore) { bestScore = sc; best = c; }
+    }
+    return (bestScore >= 2) ? best : -1;
+  }
+
   function parseRows(aoa) {
     buSeq = 0;
     var results = [];
     var autoIdx = 0;
+    var cols = detectColumns(aoa);
     for (var r = 0; r < aoa.length; r++) {
+      if (r < cols.start) continue;
       var row = aoa[r] || [];
-      var rawName = row[1];
-      var name = (rawName === undefined || rawName === null) ? '' : String(rawName).trim();
+      var nameCol, name;
+      if (cols.name >= 0) {
+        nameCol = cols.name;
+        name = cellText(row[cols.name]);
+      } else {
+        nameCol = pickNameCell(row);
+        name = nameCol >= 0 ? cellText(row[nameCol]) : '';
+      }
+      name = name.replace(/^\d{1,3}[、.．]\s*/, '');   // 去掉"1." "2、"式前缀
       if (!name) continue;
-      if (/序号/.test(String(row[0] || '')) && /名称/.test(name)) continue;
-      if (r < 3 && /项目名称|设备名称|名称型号/.test(name) && !/\d/.test(name)) continue;
+      if (/名称|项目内容|合计|小计|备注/.test(name) && !/\d/.test(name)) continue;
 
       var it = buildItem(name);
+
+      // 工程量：优先用表头定位的列，否则取名称列之后（或整行）最后一个数字单元格
+      var qty;
+      if (cols.qty >= 0) {
+        qty = parseFloat(cellText(row[cols.qty]));
+      } else {
+        for (var c2 = row.length - 1; c2 >= 0; c2--) {
+          if (c2 === nameCol) continue;
+          if (isNumCell(row[c2])) { qty = parseFloat(cellText(row[c2])); break; }
+        }
+      }
+
       if (it.category === 'other') {
-        var qRaw = parseFloat(row[2]);
         // 既无工程量又不含数字，视为标题/说明行跳过
-        if (!(!isNaN(qRaw) && qRaw > 0) && !/\d/.test(name)) continue;
+        if (!(!isNaN(qty) && qty > 0) && !/\d/.test(name)) continue;
       }
 
       autoIdx++;
-      var seqRaw = row[0];
-      it.index = (seqRaw !== undefined && seqRaw !== null && String(seqRaw).trim() !== '') ? String(seqRaw).trim() : String(autoIdx);
+      var seqRaw = cols.seq >= 0 ? row[cols.seq] : null;
+      it.index = (seqRaw !== undefined && seqRaw !== null && cellText(seqRaw) !== '') ? cellText(seqRaw) : String(autoIdx);
 
-      var qty = parseFloat(row[2]);
       it.qtyWarn = false;
       if (isNaN(qty) || qty <= 0) { qty = 1; it.qtyWarn = true; }
       it.quantity = qty;
 
-      // 单位：风机/空调器/风机盘管/油烟/变风量等设备=台；风口/风阀/消声器/静压箱/人防密闭阀=个
-      it.unit = (it.category === 'vent' || it.category === 'valve' || it.category === 'silencer' ||
+      // 单位：优先用表里的单位列，否则按类别默认
+      var unitCell = '';
+      if (cols.unit >= 0 && looksUnit(row[cols.unit])) unitCell = normUnit(row[cols.unit]);
+      else {
+        for (var c3 = 0; c3 < row.length; c3++) {
+          if (c3 === nameCol) continue;
+          if (looksUnit(row[c3])) { unitCell = normUnit(row[c3]); break; }
+        }
+      }
+      it.unit = unitCell || ((it.category === 'vent' || it.category === 'valve' || it.category === 'silencer' ||
         it.category === 'plenum' || it.category === 'renfang') ? '个'
-        : (it.category === 'duct' ? 'm²' : '台');
+        : (it.category === 'duct' ? 'm²' : '台'));
 
       var quota = matchQuota(it);
       quota = applySupp(it, quota);
