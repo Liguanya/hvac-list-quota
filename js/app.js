@@ -436,7 +436,7 @@
   function pick(tiers, v, prefix) {
     var i = tierIndex(tiers, v);
     if (i < 0) return null;
-    return { code: tiers[i].code, name: prefix + ' ' + tiers[i].label, inferred: tiers.length > 2, overRange: overOf(tiers, v) };
+    return { code: tiers[i].code, name: prefix + tiers[i].label, inferred: tiers.length > 2, overRange: overOf(tiers, v) };
   }
 
   function matchQuota(it) {
@@ -447,7 +447,7 @@
         return { code: '9-247', name: '卫生间通风器安装', inferred: false };
       }
       var ftiers = FAN_TIERS[s === 'centrifugal' ? 'centrifugal' : 'axial'];
-      var pre = (s === 'centrifugal') ? '离心式通风机安装' : '轴流式、斜流式、混流式通风机安装';
+      var pre = (s === 'centrifugal') ? '离心式通风机安装 风量' : '轴流式、斜流式、混流式通风机安装 风量';
       var q = pick(ftiers, it.airVolume, pre);
       if (!q) return { code: '', name: '', noTier: true };
       return q;
@@ -455,7 +455,7 @@
 
     if (it.category === 'acu') {
       if (s === 'unit' || s === 'pau') {
-        var q1 = pick(ACU_UNIT_TIERS, it.airVolume, s === 'pau' ? '新风机组安装（套组合式空调机组）' : '组合式空调机组安装');
+        var q1 = pick(ACU_UNIT_TIERS, it.airVolume, s === 'pau' ? '新风机组安装（套组合式空调机组） 风量' : '组合式空调机组安装 风量');
         if (!q1) return { code: '', name: '', noTier: true };
         return q1;
       }
@@ -473,7 +473,7 @@
     }
 
     if (it.category === 'fume') {
-      var q2 = pick(FUME_TIERS, it.airVolume, '油烟净化器安装');
+      var q2 = pick(FUME_TIERS, it.airVolume, '油烟净化器安装 风量');
       if (!q2) return { code: '', name: '', noTier: true };
       return q2;
     }
@@ -510,7 +510,7 @@
       if (s === 'fire70' || s === 'fire70e' || s === 'fire280' || s === 'fire280e') {
         var q6 = pick(V_FIRE, p, '防火阀安装 周长');
         if (!q6) return { code: '', name: '', noTier: true };
-        q6.name = (s === 'fire280' || s === 'fire280e' ? '排烟防火阀安装 周长' : '防火阀安装 周长') + ' ' + V_FIRE[tierIndex(V_FIRE, p)].label + (s === 'fire70e' || s === 'fire280e' ? '（电动）' : '');
+        q6.name = (s === 'fire280' || s === 'fire280e' ? '排烟防火阀安装 周长' : '防火阀安装 周长') + V_FIRE[tierIndex(V_FIRE, p)].label + (s === 'fire70e' || s === 'fire280e' ? '（电动）' : '');
         return q6;
       }
       if (s === 'butterfly' || s === 'butterflyE') {
