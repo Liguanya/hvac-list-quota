@@ -532,7 +532,7 @@
       var q10 = pick(V_MULTI, p, '对开多叶调节阀安装 周长');
       if (!q10) return { code: '', name: '', noTier: true };
       var label = s === 'multileafE' ? '对开多叶调节阀安装（电动）周长' : (s === 'tee' ? '三通多叶调节阀安装 周长' : (s === 'sealed' ? '密闭阀门安装 周长' : (s === 'cav' ? '定风量阀安装 周长' : '对开多叶调节阀安装 周长')));
-      q10.name = label + ' ' + V_MULTI[tierIndex(V_MULTI, p)].label;
+      q10.name = label + V_MULTI[tierIndex(V_MULTI, p)].label;
       return q10;
     }
 
@@ -554,7 +554,7 @@
         return a3;
       }
       if (s === 'diffuserRd') {
-        var a4 = pick(O_DIFF_RD, pv, '圆形散流器安装 周长');
+        var a4 = pick(O_DIFF_RD, pv, '圆形散流器安装 ');
         if (!a4) return { code: '', name: '', noTier: true };
         return a4;
       }
