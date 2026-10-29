@@ -163,15 +163,40 @@
       overpressure: { coef: 800, base: 80 }
     },
 
+    /* 人防手动密闭阀：整类统一标准 = 直径(mm) × 单价，尺寸越大价越高，保证单调 */
     renfang: {
-      brand: '国产人防',
-      coef: 1200,
-      base: 120,
-      factor: 0.5,
+      brand: '国产人防（3C认证）',
+      perMm: 2.6,
+      minPrice: 380,
       addE: 400
     },
 
-    silencer: { brand: '国产中高档', coef: 580, factor: 0.5, div: 1000 },
+  // 风管（镀锌钢板）：按板厚档给主材价（元/m²），板厚按风管周长推定
+  duct: {
+    brand: '国产镀锌钢板（首钢/鞍钢）',
+    perKg: 5.2,
+    plates: [
+      { max: 2000, t: 0.75, kg: 5.89 },
+      { max: 4000, t: 1.00, kg: 7.85 },
+      { max: 99999, t: 1.20, kg: 9.42 }
+    ]
+  },
+
+    /* 消声器：整类统一标准 = 周长(m) × 单价（按1m标准节长），随截面单调递增 */
+    silencer: {
+      brand: '国产中高档',
+      perM: 560,
+      typeCoef: { micro: 1.0, impedance: 1.15, pipe: 0.85 },
+      typeName: { micro: '微穿孔板', impedance: '阻抗式', pipe: '管式' }
+    },
+
+    /* 补齐原无参考价的设备（统一按风量/参数线性计价，保证同类单调） */
+    vav: { brand: '国产中高档', perVol: 2.2, minPrice: 1800, fallback: 2200 },
+    dehum: { brand: '国产中高档', perKg: 1500, perVol: 2.6, fallback: 6000 },
+    filterAbs: { brand: '国产人防（3C认证）', perVol: 6.0, fallback: 6000 },
+    heater: { brand: '国产中高档', perVol: 1.0, fallback: 8000 },
+    dedust: { brand: '国产中高档', perVol: 5.0, fallback: 15000 },
+    vrf: { brand: '国产中高档', perHp: 3500, perKw: 900, fallback: 25000 },
     plenum: { brand: '国产中高档', coef: 480, factor: 0.5 }
   };
 

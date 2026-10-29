@@ -73,12 +73,17 @@
             <div class="instructions">
                 <h3>📋 使用说明</h3>
                 <ul>
-                    <li>录入暖通专业工程量清单 Excel（.xlsx/.xls），<strong>A列=序号</strong>、<strong>B列=项目名称（含型号/规格/风量）</strong>、<strong>C列=数量</strong>，首行可为表头；上传后系统按项目名称<strong>自动识别并套用清单与定额</strong>（通风机、空调器、风机盘管、油烟净化、风口、风阀、消声器、静压箱、人防密闭阀等）。</li>
-                    <li>识别依赖名称里的<strong>关键参数</strong>：风机/空调器/油烟净化要写<strong>风量</strong>（如 <code>5000m³/h</code>、<code>L=5000</code>），风口/风阀/消声器要写<strong>尺寸</strong>（如 <code>800×400</code>、<code>φ400</code>），静压箱写<strong>长×宽×高</strong>（如 <code>1200×400×250</code>）。缺参数的行会进"待人工处理"并提示。</li>
+                    <li>录入暖通专业工程量清单 Excel（.xlsx/.xls），<strong>A列=序号</strong>、<strong>B列=项目名称（含型号/规格/风量）</strong>、<strong>C列=数量</strong>，首行可为表头；上传后系统按项目名称<strong>自动识别并套用清单与定额</strong>（通风机、空调器、风机盘管、油烟净化、风口、风阀、消声器、静压箱、人防密闭阀、风管等）。</li>
+                    <li>识别依赖名称里的<strong>关键参数</strong>：风机/空调器/油烟净化要写<strong>风量</strong>（如 <code>5000m³/h</code>、<code>L=5000</code>），风口/风阀/消声器/风管要写<strong>尺寸</strong>（如 <code>800×400</code>、<code>φ400</code>），静压箱写<strong>长×宽×高</strong>（如 <code>1200×400×250</code>）。缺参数的行会进"待人工处理"并提示。</li>
                     <li>输出结果表<strong>「类型/选型」列</strong>可手动切换，切换后定额与主材价<strong>实时重算</strong>：<strong>通风机</strong>选 轴流/斜流/混流式 或 离心式（名称里写了"离心"会自动选离心，没写默认轴流并提示核对）；<strong>空调器</strong>选 组合式空调机组/新风机组/吊顶式/落地式/墙上式/分体空调；<strong>风机盘管</strong>选 吊顶/落地/壁挂/卡式；<strong>风口</strong>选 单层百叶/双层百叶/防雨百叶/自垂式/门铰回风/电动风口/防火风口/方形散流器/圆形散流器/带调节阀百叶/圆形带阀/多叶送排烟口/板式排烟口；<strong>风阀</strong>选 70℃防火阀/280℃排烟防火阀（可带电动）/蝶阀/止回阀/斜插板阀/对开多叶调节阀/三通多叶/密闭阀门/定风量阀/超压排气阀门；<strong>消声器</strong>选 微穿孔板/阻抗式/管式。</li>
                     <li><strong>定额依据</strong>：2020预算基价<strong>第九册（通风空调工程）</strong>——通风机 9-233~243（离心/轴流按风量分档）、组合式空调机组·新风机组 9-257~264、吊顶/落地/墙上式空调器 9-248/251/254、风机盘管 9-265~268、变风量末端 9-269、油烟净化 9-271~274、风阀 9-63~85、人防密闭阀 9-423~429、风口 9-86~154、消声器 9-190~204、静压箱 9-213~215。</li>
-                    <li><strong>价格依据</strong>：暖通设备与风口风阀无官方月度信息价，主材价按<strong>国产中高档/合资品牌市场参考价</strong>计（鼠标悬停"市场价"标签可看计算公式与品牌）。风机/空调机组/油烟净化按<strong>风量×元/m³·h⁻¹ 系数</strong>，风机盘管按<strong>FP型号一口价</strong>，风口风阀按<strong>面积×元/㎡+基数，×0.5系数</strong>，静压箱按<strong>展开面积×480元/㎡×0.5</strong>；吊顶式/落地式/墙上式空调器、变风量末端、除湿机、过滤吸收器、空气加热器、除尘设备暂<strong>无参考价</strong>，标"待询价"由人工补。</li>
-                    <li>定额名称旁的 <span class="tag tag-infer">推</span> 表示编号按风量/周长/直径在区间内就近推算，导出后建议对照基价表核对；结果支持<strong>「广联达 / 建经科技」</strong>两种格式导出。</li>
+                    <li><strong>价格依据</strong>：暖通设备与风口风阀无官方月度信息价，主材价按<strong>国产中高档/合资品牌市场参考价</strong>计（鼠标悬停"市场价"标签可看计算公式与品牌）。风机/空调机组/油烟净化按<strong>风量×元/m³·h⁻¹ 系数</strong>，风机盘管按<strong>FP型号一口价</strong>，风口风阀按<strong>面积×元/㎡+基数，×0.5系数</strong>，静压箱按<strong>展开面积×480元/㎡×0.5</strong>。</li>
+                    <li><strong>风管</strong>：按<strong>镀锌钢板板厚档</strong>计主材价——周长≤2000mm 取 δ0.75（5.89kg/㎡）、≤4000mm 取 δ1.00（7.85kg/㎡）、&gt;4000mm 取 δ1.20（9.42kg/㎡），单价 5.2 元/kg，即 <strong>30.63 / 40.82 / 48.98 元/㎡</strong>，随截面单调递增；单位为 m²。</li>
+                    <li><strong>消声器</strong>：整类统一按<strong>周长(m) × 560元/m × 类型系数</strong>计价（微穿孔板 1.0、阻抗式 1.15、管式 0.85，按 1m 标准节长），同类型下截面越大单价越高，不会出现大截面比小截面便宜；<strong>人防密闭阀</strong>：整类统一按<strong>直径(mm) × 2.6元/mm</strong>（下限 380 元，电动执行机构另加 400 元），随直径单调递增。</li>
+                    <li><strong>已补参考价的设备</strong>：吊顶式/落地式/墙上式空调器（按制冷量 kW 或风量）、多联机（室内机按 kW、室外机按 HP）、变风量末端（风量×2.2，下限 1800）、除湿机（除湿量 kg/h × 1500）、过滤吸收器（风量×6）、空气加热/冷却器（风量×1.0）、除尘设备（风量×5）；无参数时按该类典型价兜底，不再留"待询价"空档。</li>
+                    <li><strong>未匹配兜底</strong>：名称无法对应标准清单/定额的项目（如风管、支架、软接、保温、未收录设备），统一套<strong>补充清单 030806801</strong>，定额按<strong>补1、补2、补3……</strong>顺序编号，并在"核对提示"列标注需补录定额与单价依据。</li>
+                    <li><strong>排烟/消防风机</strong>默认按<strong>轴流式</strong>（9-239~243）匹配，"类型/选型"列可切换为<strong>离心式</strong>（9-233~238）以应对个别大风压工况。</li>
+                    <li>定额名称旁的 <span class="tag tag-infer">推</span> 表示编号按风量/周长/直径在区间内就近推算，导出后建议对照基价表核对；<strong>空调器套用方法保持不变</strong>；结果支持<strong>「广联达 / 建经科技」</strong>两种格式导出。</li>
                 </ul>
             </div>
 
@@ -103,6 +108,7 @@
                 <div class="summary-card"><div class="number" id="totalCount">0</div><div class="label">项目总数（条）</div></div>
                 <div class="summary-card teal2"><div class="number" id="catDev">0</div><div class="label">通风空调设备</div></div>
                 <div class="summary-card teal2"><div class="number" id="catVent">0</div><div class="label">风口风阀</div></div>
+                <div class="summary-card teal2"><div class="number" id="catDuct">0</div><div class="label">风管</div></div>
                 <div class="summary-card teal2"><div class="number" id="catOther">0</div><div class="label">消声器·静压箱</div></div>
                 <div class="summary-card amber"><div class="number" id="pendingCount">0</div><div class="label">待询价</div></div>
                 <div class="summary-card"><div class="number" id="totalPrice">¥0</div><div class="label">主材费合计（元）</div></div>

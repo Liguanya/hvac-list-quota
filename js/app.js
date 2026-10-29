@@ -14,6 +14,7 @@
   // 清单编码（天津2025清单计价规范 附录D 通风空调工程）
   // ============================================================
   var LIST = {
+    other: '',
     heater: '030701001',    // 空气加热器、冷却器
     dedust: '030701002',    // 除尘设备
     acu: '030701003',       // 空调器
@@ -27,7 +28,8 @@
     vent: '030703007',      // 风口
     silencer: '030703020',  // 消声器
     plenum: '030703021',    // 静压箱
-    renfang: '030703023'    // 人防手动密闭阀
+    renfang: '030703023',   // 人防手动密闭阀
+    duct: ''                // 风管：未匹配标准定额 → 统一套补充清单030806801 + 补N
   };
   var LIST_NAME = {
     heater: '空气加热器、冷却器', dedust: '除尘设备', acu: '空调器', fcu: '风机盘管',
@@ -36,11 +38,15 @@
     plenum: '静压箱', renfang: '人防手动密闭阀'
   };
 
+  // 未匹配清单/定额时统一套用的补充清单编码
+  var SUPP_LIST = '030806801';
+  var buSeq = 0;   // 补充定额流水号：补1、补2、补3……
+
   var CAT_LABEL = {
     fan: '通风机', acu: '空调器', fcu: '风机盘管', fume: '油烟净化',
     heater: '空气加热/冷却器', dedust: '除尘设备', dehum: '除湿机', filter: '过滤吸收器',
     vav: '变风量末端', vent: '风口', valve: '风阀', silencer: '消声器',
-    plenum: '静压箱', renfang: '人防密闭阀'
+    plenum: '静压箱', renfang: '人防密闭阀', other: '其他（未匹配）'
   };
 
   var CAT_WORK = {
@@ -57,7 +63,9 @@
     valve: '阀体安装、固定、调试',
     silencer: '消声器安装、固定',
     plenum: '静压箱制作（成品）、安装、固定',
-    renfang: '阀体安装、固定、密闭检查'
+    renfang: '阀体安装、固定、密闭检查',
+    duct: '风管制作（成品采购）、法兰/咬口、安装、固定、漏光漏风试验',
+    other: '待补充：请按实际做法填写工作内容'
   };
 
   // ============================================================
@@ -221,6 +229,15 @@
     return null;
   }
 
+  // 除湿量（kg/h）
+  function parseDehumKg(name) {
+    var m = name.match(/(\d+(?:\.\d+)?)\s*(?:kg\/h|KG\/H|kg·h|公斤\/小时|公斤每小时)/);
+    if (m) return parseFloat(m[1]);
+    m = name.match(/(?:除湿量)[^\d]{0,6}(\d+(?:\.\d+)?)/);
+    if (m) return parseFloat(m[1]);
+    return null;
+  }
+
   // 尺寸（mm）：支持 800*400、800×400×250、φ400/D400
   function parseDim(name) {
     var d = { length: 0, width: 0, height: 0, diameter: 0 };
@@ -355,6 +372,9 @@
     if (/百叶/.test(n) && !/阀/.test(n)) return 'vent';
     // 风阀类
     if (/阀/.test(n)) return 'valve';
+    // 风管类（风管机属空调器，需先排除）
+    if (/风管机/.test(n)) return 'acu';
+    if (/风管|风道|通风管道|送风管道|排风管道|排烟管道|送回风管/.test(n)) return 'duct';
 
     // 设备类
     if (/风机盘管|风盘|FCU/i.test(n)) return 'fcu';
@@ -374,7 +394,7 @@
   // ============================================================
   function buildItem(name) {
     var category = classify(name);
-    if (!category) return null;
+    if (!category) category = 'other';
 
     var it = {
       category: category,
@@ -388,6 +408,13 @@
       brand: ''
     };
 
+    if (category === 'duct') {
+      it.unit = 'm²';
+      it.brand = P.duct.brand;
+      var dp = calcPerimeter(it.dim);
+      it.ductPeri = dp;
+      it.plate = ductPlate(dp);
+    }
     if (category === 'fan') {
       var ft = parseFanType(name);
       it.sub = ft || 'axial';
@@ -616,7 +643,18 @@
         }
         return { price: 4200, source: 'market', basis: '市场价（国产中高档）：分体空调（壁挂/柜式）含安装辅材 4200元/台' };
       }
-      if (s === 'vrf') return { price: null, source: 'pending', basis: '' }; // 多联机按HP询价
+      if (s === 'vrf') {
+        var vf = P.vrf, hpm = it.name.match(/(\d+(?:\.\d+)?)\s*(?:HP|hp|匹)/), kwV = parseCoolingKw(it.name);
+        if (hpm) {
+          var vpr = Math.round(parseFloat(hpm[1]) * vf.perHp);
+          return { price: vpr, source: 'market', basis: '市场价（' + vf.brand + '）：多联机 ' + hpm[1] + 'HP × ' + vf.perHp + '元/HP = ' + vpr + '元/台' };
+        }
+        if (kwV) {
+          var vpr2 = Math.round(kwV * vf.perKw);
+          return { price: vpr2, source: 'market', basis: '市场价（' + vf.brand + '）：多联机室内机 制冷量' + kwV + 'kW × ' + vf.perKw + '元/kW = ' + vpr2 + '元/台' };
+        }
+        return { price: vf.fallback, source: 'market', basis: '市场价（' + vf.brand + '）：未识别HP/制冷量，按常规 ' + vf.fallback + '元/台（请核对）' };
+      }
       // 吊顶式 / 落地式 / 墙上式：按制冷量kW或风量参考
       var cfgA = P.acuUnit[s];
       if (!cfgA) return { price: null, source: 'pending', basis: '' };
@@ -651,11 +689,14 @@
     if (it.category === 'vent') return ventPrice(it);
     if (it.category === 'valve') return valvePrice(it);
     if (it.category === 'renfang') return renfangPrice(it);
+    if (it.category === 'duct') return ductPrice(it);
     if (it.category === 'silencer') {
       var per = it.perimeter / 1000;
       if (!per) return null;
-      var sp = +(per * P.silencer.coef * P.silencer.factor / P.silencer.div).toFixed(2);
-      return { price: sp, source: 'market', basis: '市场价：周长' + per.toFixed(2) + 'm × ' + P.silencer.coef + '元 × ' + P.silencer.factor + '系数 ÷ ' + P.silencer.div + ' = ' + sp + '元/个（沿用原系统口径，单价偏低请核对）' };
+      var scfg = P.silencer, tc = scfg.typeCoef[it.sub] || 1.0;
+      var sp = +(per * scfg.perM * tc).toFixed(2);
+      var tnote = tc === 1.0 ? '' : ' × ' + tc + '（' + (scfg.typeName[it.sub] || '') + '系数）';
+      return { price: sp, source: 'market', basis: '市场价（' + scfg.brand + '）：周长' + per.toFixed(2) + 'm × ' + scfg.perM + '元/m' + tnote + ' = ' + sp + '元/个（按1m标准节长，随截面单调）' };
     }
     if (it.category === 'plenum') {
       var sf = it.surface;
@@ -664,7 +705,56 @@
       return { price: pp, source: 'market', basis: '市场价：展开面积' + sf + '㎡ × ' + P.plenum.coef + '元/㎡ × ' + P.plenum.factor + '系数 = ' + pp + '元/个' };
     }
 
-    // 变风量末端 / 空气加热器 / 除尘设备 / 除湿机 / 过滤吸收器：无参考价，待询价
+    if (it.category === 'vav') {
+      var vc = P.vav, vv = it.airVolume;
+      if (vv) {
+        var vp = Math.max(Math.round(vv * vc.perVol), vc.minPrice);
+        return { price: vp, source: 'market', basis: '市场价（' + vc.brand + '）：风量' + vv + 'm³/h × ' + vc.perVol + '元 = ' + vp + '元/台（下限' + vc.minPrice + '元）' };
+      }
+      return { price: vc.fallback, source: 'market', basis: '市场价（' + vc.brand + '）：未识别风量，按常规变风量末端 ' + vc.fallback + '元/台（请核对）' };
+    }
+
+    if (it.category === 'dehum') {
+      var dc = P.dehum, kg = parseDehumKg(it.name);
+      if (kg) {
+        var dp = Math.round(kg * dc.perKg);
+        return { price: dp, source: 'market', basis: '市场价（' + dc.brand + '）：除湿量' + kg + 'kg/h × ' + dc.perKg + '元 = ' + dp + '元/台' };
+      }
+      if (it.airVolume) {
+        var dp2 = Math.round(it.airVolume * dc.perVol);
+        return { price: dp2, source: 'market', basis: '市场价（' + dc.brand + '）：风量' + it.airVolume + 'm³/h × ' + dc.perVol + '元 = ' + dp2 + '元/台' };
+      }
+      return { price: dc.fallback, source: 'market', basis: '市场价（' + dc.brand + '）：未识别除湿量/风量，按常规 ' + dc.fallback + '元/台（请核对）' };
+    }
+
+    if (it.category === 'filter') {
+      var fc = P.filterAbs;
+      if (it.airVolume) {
+        var fp2 = Math.round(it.airVolume * fc.perVol);
+        return { price: fp2, source: 'market', basis: '市场价（' + fc.brand + '）：过滤吸收器 风量' + it.airVolume + 'm³/h × ' + fc.perVol + '元 = ' + fp2 + '元/台' };
+      }
+      return { price: fc.fallback, source: 'market', basis: '市场价（' + fc.brand + '）：过滤吸收器按常规 ' + fc.fallback + '元/台（请核对）' };
+    }
+
+    if (it.category === 'heater') {
+      var hc = P.heater;
+      if (it.airVolume) {
+        var hp2 = Math.round(it.airVolume * hc.perVol);
+        return { price: hp2, source: 'market', basis: '市场价（' + hc.brand + '）：空气加热（冷却）器 风量' + it.airVolume + 'm³/h × ' + hc.perVol + '元 = ' + hp2 + '元/台' };
+      }
+      return { price: hc.fallback, source: 'market', basis: '市场价（' + hc.brand + '）：按常规 ' + hc.fallback + '元/台（请核对）' };
+    }
+
+    if (it.category === 'dedust') {
+      var uc = P.dedust;
+      if (it.airVolume) {
+        var up = Math.round(it.airVolume * uc.perVol);
+        return { price: up, source: 'market', basis: '市场价（' + uc.brand + '）：除尘设备 风量' + it.airVolume + 'm³/h × ' + uc.perVol + '元 = ' + up + '元/台' };
+      }
+      return { price: uc.fallback, source: 'market', basis: '市场价（' + uc.brand + '）：按常规 ' + uc.fallback + '元/台（请核对）' };
+    }
+
+    // 其他未匹配类型：留空待人工
     return { price: null, source: 'pending', basis: '' };
   }
 
@@ -722,12 +812,29 @@
     return { price: price, source: 'market', basis: '市场价（' + cfg.brand + '）：' + basis + ' = ' + price + '元/个' };
   }
 
+  // 风管板厚档：按风管周长(mm)推定，符合《通风与空调工程施工质量验收规范》常用板厚
+  function ductPlate(peri) {
+    var pl = P.duct.plates;
+    for (var i = 0; i < pl.length; i++) if (peri <= pl[i].max) return pl[i];
+    return pl[pl.length - 1];
+  }
+
+  function ductPrice(it) {
+    var cfg = P.duct, pl = it.plate || ductPlate(it.ductPeri || 0);
+    var price = +(pl.kg * cfg.perKg).toFixed(2);
+    var spec = it.ductPeri ? '周长' + it.ductPeri + 'mm' : '未识别规格';
+    return {
+      price: price, source: 'market',
+      basis: '市场价（' + cfg.brand + '）：' + spec + '→ 板厚δ' + pl.t + 'mm（' + pl.kg + 'kg/㎡）× ' + cfg.perKg + '元/kg = ' + price + '元/㎡'
+    };
+  }
+
   function renfangPrice(it) {
-    var G = it.area, cfg = P.renfang;
-    if (!G) return null;
+    var d = it.dim.diameter, cfg = P.renfang;
+    if (!d) return null;
     var add = it.sub === 'manualE' ? cfg.addE : 0;
-    var price = +((G * cfg.coef + cfg.base) * cfg.factor + add).toFixed(2);
-    return { price: price, source: 'market', basis: '市场价（' + cfg.brand + '）：面积' + G + '㎡ × ' + cfg.coef + ' + ' + cfg.base + '，×' + cfg.factor + (add ? ' + 电动执行机构' + add : '') + ' = ' + price + '元/个' };
+    var price = +(Math.max(d * cfg.perMm, cfg.minPrice) + add).toFixed(2);
+    return { price: price, source: 'market', basis: '市场价（' + cfg.brand + '）：直径' + d + 'mm × ' + cfg.perMm + '元/mm' + (add ? ' + 电动执行机构' + add : '') + ' = ' + price + '元/个（随直径单调）' };
   }
 
   // ============================================================
@@ -736,16 +843,20 @@
   function buildWarn(it, quota) {
     var w = [];
     if (it.category === 'fan' && it.fanAuto && !it.isToiletFan) {
-      w.push('名称未注明风机类型，暂按轴流/斜流/混流式（9-239~243），如为离心式请在"类型/选型"列切换');
+      w.push(/排烟|消防/.test(it.name)
+        ? '排烟/消防风机默认按轴流式（9-239~243），如实际为离心式请在"类型/选型"列切换'
+        : '名称未注明风机类型，暂按轴流/斜流/混流式（9-239~243），如为离心式请在"类型/选型"列切换');
     }
     if (quota.noTier) {
       if (it.category === 'fan' || it.category === 'fume' || it.category === 'acu') w.push('未识别风量(m³/h)，请在名称中注明（如 5000m³/h）或手选定额');
       if (it.category === 'vent' || it.category === 'valve') w.push('未识别规格尺寸（如 800×400 或 φ400），请在名称中注明或手选定额');
       if (it.category === 'silencer') w.push('未识别消声器规格（长×宽），请核对名称');
+      if (it.category === 'duct') w.push('未识别风管规格（如 1000×400），板厚按最小档计，请核对名称');
       if (it.category === 'plenum') w.push('未识别静压箱尺寸（长×宽×高），请核对名称');
       if (it.category === 'renfang') w.push('未识别人防密闭阀直径（如 φ300），请核对名称');
     }
-    if (quota.noQuota) w.push('该设备本系统未收录定额子目，请按基价表第九册手选');
+    if (quota.supp) w.push('未匹配到标准清单/定额，已按补充清单' + SUPP_LIST + '＋' + quota.code + '计列，请补录定额与单价依据');
+    if (it.category === 'other') w.push('未识别项目类型，请手动确认清单与定额');
     if (quota.overRange) w.push('参数超本类最大档，已取顶档子目，请按基价表核对');
     if (quota.massTier) w.push('空调器定额按设备质量分档（0.15t/0.3t/0.5t…），名称未注质量，暂按最小档，请按实际重量核对');
     if (it.category === 'acu' && it.sub === 'pau') w.push('新风机组按组合式空调机组子目（9-257~264）套用，如基价表另有新风机组专用子目请手选');
@@ -754,7 +865,7 @@
     if (it.category === 'fcu' && !it.fcuModel) w.push('未识别风机盘管FP型号，主材按FP-85参考价计，请按实际型号核对');
     if (it.category === 'vent' && it.sub === 'diffuserRd' && /旋流/.test(it.name)) w.push('旋流风口暂按圆形散流器子目，如有专用子目请手选');
     if (it.category === 'valve' && it.sub === 'butterfly' && !/蝶阀/.test(it.name)) w.push('未识别阀型，暂按蝶阀（9-63~67），请核对');
-    if (it.category === 'silencer') w.push('消声器主材价沿用原系统公式，单价明显偏低（按周长m×580×0.5÷1000），请核对是否按面积计价');
+    if (it.category === 'silencer' && !it.perimeter) w.push('未识别消声器截面（长×宽），主材价按0计，请核对名称');
     return w.join('；');
   }
 
@@ -787,7 +898,13 @@
     if (it.category === 'heater' || it.category === 'dedust' || it.category === 'dehum' || it.category === 'filter') {
       return dimStr || (it.airVolume ? '风量' + it.airVolume + 'm³/h' : '');
     }
-    // 风口/风阀/消声器/静压箱/人防
+    // 人防密闭阀：只显示直径（周长无工程意义）
+    if (it.category === 'renfang') return dimStr || '';
+    // 风管：规格 + 板厚
+    if (it.category === 'duct') {
+      return (dimStr || '未识别规格') + (it.plate ? ' δ' + Number(it.plate.t).toFixed(2) + 'mm' : '');
+    }
+    // 风口/风阀/消声器/静压箱
     if (it.category === 'plenum') {
       return (dimStr || '') + (it.sectionArea ? '（截面积' + it.sectionArea + '㎡）' : '');
     }
@@ -818,9 +935,30 @@
   // ============================================================
   // 主流程
   // ============================================================
-  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1 };
+  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, other: 1 };
+
+  // 补充定额编号：补1、补2……（同一行始终复用同一编号，切换类型不重排）
+  function suppInfo(it) {
+    if (!it.suppNo) { buSeq++; it.suppNo = buSeq; }
+    var sp = specText(it);
+    return {
+      code: '补' + it.suppNo,
+      name: '补充定额 补' + it.suppNo + '（' + (CAT_LABEL[it.category] || '') + (sp ? ' ' + sp : '') + '）'
+    };
+  }
+
+  // 统一兜底：清单或定额任一未匹配 → 清单030806801 + 补N
+  function applySupp(it, quota) {
+    if (it.listCodeOrig === undefined) it.listCodeOrig = it.listCode;
+    if (quota.code && it.listCode) return quota;
+    it.listCode = SUPP_LIST;
+    if (quota.code) { quota.supp = true; return quota; }
+    var si = suppInfo(it);
+    return { code: si.code, name: si.name, inferred: false, supp: true };
+  }
 
   function parseRows(aoa) {
+    buSeq = 0;
     var results = [];
     var autoIdx = 0;
     for (var r = 0; r < aoa.length; r++) {
@@ -832,7 +970,11 @@
       if (r < 3 && /项目名称|设备名称|名称型号/.test(name) && !/\d/.test(name)) continue;
 
       var it = buildItem(name);
-      if (!it) continue;
+      if (it.category === 'other') {
+        var qRaw = parseFloat(row[2]);
+        // 既无工程量又不含数字，视为标题/说明行跳过
+        if (!(!isNaN(qRaw) && qRaw > 0) && !/\d/.test(name)) continue;
+      }
 
       autoIdx++;
       var seqRaw = row[0];
@@ -845,12 +987,15 @@
 
       // 单位：风机/空调器/风机盘管/油烟/变风量等设备=台；风口/风阀/消声器/静压箱/人防密闭阀=个
       it.unit = (it.category === 'vent' || it.category === 'valve' || it.category === 'silencer' ||
-        it.category === 'plenum' || it.category === 'renfang') ? '个' : '台';
+        it.category === 'plenum' || it.category === 'renfang') ? '个'
+        : (it.category === 'duct' ? 'm²' : '台');
 
       var quota = matchQuota(it);
+      quota = applySupp(it, quota);
       it.quotaCode = quota.code;
       it.quotaName = quota.name;
       it.codeInferred = !!quota.inferred;
+      it.supp = !!quota.supp;
       it.warn = buildWarn(it, quota);
       if (it.qtyWarn) it.warn = (it.warn ? it.warn + '；' : '') + '工程量缺失，暂按1' + it.unit + '计请核对';
 
@@ -872,7 +1017,9 @@
   }
 
   function recomputeQuota(it) {
-    var q = matchQuota(it);
+    if (it.listCodeOrig !== undefined) it.listCode = it.listCodeOrig;
+    var q = applySupp(it, matchQuota(it));
+    it.supp = !!q.supp;
     it.quotaCode = q.code;
     it.quotaName = q.name;
     it.codeInferred = !!q.inferred;
@@ -951,11 +1098,12 @@
   }
 
   function updateSummary(data) {
-    var n = data.length, dev = 0, ovo = 0, other = 0, pending = 0, total = 0;
+    var n = data.length, dev = 0, ovo = 0, other = 0, duct = 0, pending = 0, total = 0;
     for (var i = 0; i < data.length; i++) {
       var d = data[i];
       if (d.category === 'vent' || d.category === 'valve' || d.category === 'renfang') ovo++;
       else if (d.category === 'silencer' || d.category === 'plenum') other++;
+      else if (d.category === 'duct') duct++;
       else dev++;
       if (PRICED_CATS[d.category] && d.price === null && d.priceSource !== 'none') pending++;
       if (d.price !== null && d.price !== undefined) total += d.price * d.quantity;
@@ -964,6 +1112,7 @@
     set('totalCount', n);
     set('catDev', dev);
     set('catVent', ovo);
+    set('catDuct', duct);
     set('catOther', other);
     set('pendingCount', pending);
     set('totalPrice', '¥' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
@@ -1137,7 +1286,7 @@
       recomputeQuota: recomputeQuota, recomputePrice: recomputePrice,
       exportGLD: exportGLD, exportJianjing: exportJianjing,
       getData: function () { return exportData; },
-      setAOA: function (aoa) { window._rawAOA = aoa; exportData = parseRows(aoa); renderTable(exportData); return exportData; },
+      setAOA: function (aoa) { window._rawAOA = aoa; refreshAll(); return exportData; },
       setSub: function (i, v) {
         var it = exportData[i]; it.sub = v;
         recomputeQuota(it); recomputePrice(it); it.features = generateFeature('guanglianda', it);
