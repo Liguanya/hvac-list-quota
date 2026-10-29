@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暖通专业智能组价系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .control-bar {
+            background: linear-gradient(135deg, #1a5e63 0%, #0d3d44 100%);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+        .control-bar .ctl-group { display: flex; align-items: center; gap: 10px; }
+        .control-bar label { color: #fff; font-size: 14px; font-weight: 500; white-space: nowrap; }
+        .control-bar input[type="radio"] { transform: scale(1.15); margin-right: 4px; accent-color: #2bb3a0; }
+        .status-bar { display: none; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-bottom: 18px; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-err { background: #f8d7da; color: #721c24; }
+
+        .summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
+        .summary-card { background: linear-gradient(135deg, #1a5e63 0%, #0d3d44 100%); color: #fff; border-radius: 10px; padding: 18px 10px; text-align: center; }
+        .summary-card .number { font-size: 26px; font-weight: bold; }
+        .summary-card .label { font-size: 12px; opacity: .9; margin-top: 4px; }
+        .summary-card.amber { background: linear-gradient(135deg, #b9770e 0%, #7e5109 100%); }
+        .summary-card.teal2 { background: linear-gradient(135deg, #2e8b8b 0%, #17606a 100%); }
+
+        .cell-name { text-align: left !important; white-space: normal !important; min-width: 180px; max-width: 240px; }
+        .cell-qcode { white-space: nowrap !important; }
+        .cell-qname { text-align: left !important; white-space: normal !important; min-width: 128px; max-width: 176px; }
+        .cell-spec { white-space: nowrap !important; font-size: 13px; color: #155a5f; }
+        .cell-brand { font-size: 11px; color: #666; white-space: normal !important; max-width: 86px; }
+        .cell-price { white-space: nowrap !important; font-weight: 600; color: #0d3d44; }
+        .cell-warn { font-size: 11px; color: #b9770e; text-align: left !important; white-space: normal !important; max-width: 165px; min-width: 108px; }
+        tr.row-warn { background: #fff8e6; }
+        tr.row-warn:hover { background: #fdeec4; }
+
+        .lay-static { font-size: 12px; color: #999; }
+        .cell-select {
+            padding: 5px 8px; border-radius: 7px; border: 1.5px solid #2bb3a0; font-size: 13px;
+            color: #0d3d44; background: #f2fbf9; cursor: pointer; font-weight: 600; outline: none;
+            max-width: 180px;
+        }
+        .cell-select:hover { border-color: #1a5e63; }
+        .cell-select.lay-sub { width: 100%; min-width: 132px; font-size: 12px; padding: 4px 6px; }
+        td.cell-type { min-width: 122px; white-space: nowrap; }
+        #resultTable { min-width: 1240px; }
+        
+        .tag { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .tag-pending { background: #eee; color: #888; }
+        .tag-info { background: #e0f2f1; color: #00695c; cursor: help; }
+        .tag-market { background: #e8eaf6; color: #283593; cursor: help; }
+        .tag-na { background: #eceff1; color: #607d8b; }
+        .tag-infer { background: #e3f2fd; color: #1565c0; cursor: help; margin-left: 4px; }
+        .legend { font-size: 12px; color: #888; margin: 6px 0 0; line-height: 1.8; }
+        @media (max-width: 900px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌬️ 暖通专业智能组价系统</h1>
+            <p>天津2025清单计价规范 · Excel上传自动识别通风机/空调器/风机盘管/风口/风阀/消声器/静压箱 · 风机类型输出页面手动选择 · 全部本地计算</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h3>📋 使用说明</h3>
+                <ul>
+                    <li>录入暖通专业工程量清单 Excel（.xlsx/.xls），<strong>A列=序号</strong>、<strong>B列=项目名称（含型号/规格/风量）</strong>、<strong>C列=数量</strong>，首行可为表头；上传后系统按项目名称<strong>自动识别并套用清单与定额</strong>（通风机、空调器、风机盘管、油烟净化、风口、风阀、消声器、静压箱、人防密闭阀等）。</li>
+                    <li>识别依赖名称里的<strong>关键参数</strong>：风机/空调器/油烟净化要写<strong>风量</strong>（如 <code>5000m³/h</code>、<code>L=5000</code>），风口/风阀/消声器要写<strong>尺寸</strong>（如 <code>800×400</code>、<code>φ400</code>），静压箱写<strong>长×宽×高</strong>（如 <code>1200×400×250</code>）。缺参数的行会进"待人工处理"并提示。</li>
+                    <li>输出结果表<strong>「类型/选型」列</strong>可手动切换，切换后定额与主材价<strong>实时重算</strong>：<strong>通风机</strong>选 轴流/斜流/混流式 或 离心式（名称里写了"离心"会自动选离心，没写默认轴流并提示核对）；<strong>空调器</strong>选 组合式空调机组/新风机组/吊顶式/落地式/墙上式/分体空调；<strong>风机盘管</strong>选 吊顶/落地/壁挂/卡式；<strong>风口</strong>选 单层百叶/双层百叶/防雨百叶/自垂式/门铰回风/电动风口/防火风口/方形散流器/圆形散流器/带调节阀百叶/圆形带阀/多叶送排烟口/板式排烟口；<strong>风阀</strong>选 70℃防火阀/280℃排烟防火阀（可带电动）/蝶阀/止回阀/斜插板阀/对开多叶调节阀/三通多叶/密闭阀门/定风量阀/超压排气阀门；<strong>消声器</strong>选 微穿孔板/阻抗式/管式。</li>
+                    <li><strong>定额依据</strong>：2020预算基价<strong>第九册（通风空调工程）</strong>——通风机 9-233~243（离心/轴流按风量分档）、组合式空调机组·新风机组 9-257~264、吊顶/落地/墙上式空调器 9-248/251/254、风机盘管 9-265~268、变风量末端 9-269、油烟净化 9-271~274、风阀 9-63~85、人防密闭阀 9-423~429、风口 9-86~154、消声器 9-190~204、静压箱 9-213~215。</li>
+                    <li><strong>价格依据</strong>：暖通设备与风口风阀无官方月度信息价，主材价按<strong>国产中高档/合资品牌市场参考价</strong>计（鼠标悬停"市场价"标签可看计算公式与品牌）。风机/空调机组/油烟净化按<strong>风量×元/m³·h⁻¹ 系数</strong>，风机盘管按<strong>FP型号一口价</strong>，风口风阀按<strong>面积×元/㎡+基数，×0.5系数</strong>，静压箱按<strong>展开面积×480元/㎡×0.5</strong>；吊顶式/落地式/墙上式空调器、变风量末端、除湿机、过滤吸收器、空气加热器、除尘设备暂<strong>无参考价</strong>，标"待询价"由人工补。</li>
+                    <li>定额名称旁的 <span class="tag tag-infer">推</span> 表示编号按风量/周长/直径在区间内就近推算，导出后建议对照基价表核对；结果支持<strong>「广联达 / 建经科技」</strong>两种格式导出。</li>
+                </ul>
+            </div>
+
+            <div class="control-bar">
+                <div class="ctl-group">
+                    <label>📂 导出格式：</label>
+                    <label style="font-weight:400"><input type="radio" name="software" value="guanglianda" checked>广联达</label>
+                    <label style="font-weight:400"><input type="radio" name="software" value="jianjing">建经科技</label>
+                </div>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">点击上传或拖拽工程量清单到此处</div>
+                <div class="upload-hint">支持 .xlsx、.xls 格式（通风机 / 空调器 / 风机盘管 / 油烟净化 / 风口 / 风阀 / 消声器 / 静压箱 / 人防密闭阀）</div>
+                <input type="file" id="excelFile" accept=".xlsx,.xls">
+            </div>
+
+            <div class="status-bar" id="statusBar"></div>
+
+            <div class="summary" id="summaryArea" style="display:flex;">
+                <div class="summary-card"><div class="number" id="totalCount">0</div><div class="label">项目总数（条）</div></div>
+                <div class="summary-card teal2"><div class="number" id="catDev">0</div><div class="label">通风空调设备</div></div>
+                <div class="summary-card teal2"><div class="number" id="catVent">0</div><div class="label">风口风阀</div></div>
+                <div class="summary-card teal2"><div class="number" id="catOther">0</div><div class="label">消声器·静压箱</div></div>
+                <div class="summary-card amber"><div class="number" id="pendingCount">0</div><div class="label">待询价</div></div>
+                <div class="summary-card"><div class="number" id="totalPrice">¥0</div><div class="label">主材费合计（元）</div></div>
+            </div>
+
+            <div class="btn-group" id="btnGroup" style="display:none;">
+                <button class="btn btn-export" id="exportBtn">📥 导出Excel</button>
+                <button class="btn btn-secondary" id="resetBtn">🔄 重新上传</button>
+            </div>
+
+            <div class="result-area" id="resultArea" style="display:none;">
+                <div class="result-header"><h2>📊 组价结果预览</h2></div>
+                <p class="legend">说明：<span class="tag tag-market">市场价</span>=国产中高档/合资品牌市场参考价（悬停看计算公式与品牌）；<span class="tag tag-pending">待询价</span>=暂无参考价需人工补；<span class="tag tag-infer">推</span>=定额编号区间内推算需核对基价表；⚠️黄色行请人工核对（多为缺参数或需手选定额）。</p>
+                <div class="table-container">
+                    <table id="resultTable">
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>清单编码</th>
+                                <th>项目名称</th>
+                                <th>类型/选型</th>
+                                <th>规格/参数</th>
+                                <th>品牌参考</th>
+                                <th>定额编码</th>
+                                <th>定额名称</th>
+                                <th>主材单价</th>
+                                <th>单位</th>
+                                <th>数量</th>
+                                <th>核对提示</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/xlsx.full.min.js"></script>
+    <script src="data/prices.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
