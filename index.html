@@ -74,8 +74,9 @@
                 <h3>📋 使用说明</h3>
                 <ul>
                     <li><strong>输入端规则</strong>：上传暖通专业工程量清单 Excel（.xlsx/.xls），<strong>A列=序号</strong>、<strong>B列=项目名称（含型号/规格/风量）</strong>、<strong>C列=数量</strong>，首行可为表头；系统按项目名称<strong>自动识别并套用清单与定额</strong>。名称中须写全关键参数——风机/空调器/油烟净化写<strong>风量</strong>（如 <code>5000m³/h</code>、<code>L=5000</code>），风口/风阀/消声器/风管写<strong>尺寸</strong>（如 <code>800×400</code>、<code>φ400</code>），静压箱写<strong>长×宽×高</strong>（如 <code>1200×400×250</code>）；输出页<strong>「类型/选型」列</strong>可手动调整（如风机轴流/离心），结果支持<strong>广联达 / 建经科技</strong>两种格式导出。</li>
-                    <li><strong>定额依据</strong>：2020预算基价<strong>第九册（通风空调工程）</strong>——通风机 9-233~243（离心/轴流按风量分档）、组合式空调机组·新风机组 9-257~264、吊顶/落地/墙上式空调器 9-248/251/254、风机盘管 9-265~268、变风量末端 9-269、油烟净化 9-271~274、风阀 9-63~85、人防密闭阀 9-423~429、风口 9-86~154、消声器 9-190~204、静压箱 9-213~215。</li>
-                    <li><strong>价格依据</strong>：参考<strong>天津市当月信息价及合理市场价标准</strong>进行组价。</li>
+                    <li><strong>定额依据</strong>：2020预算基价<strong>第九册（通风空调工程）</strong>——通风机 9-233~243（离心/轴流按风量分档）、组合式空调机组·新风机组 9-257~264、吊顶/落地/墙上式空调器 9-248/251/254、风机盘管 9-265~268、变风量末端 9-269、油烟净化 9-271~274、风阀 9-63~85、人防密闭阀 9-423~429、风口 9-86~154、消声器 9-190~204、静压箱 9-213~215、<strong>风管 9-1~9-11</strong>（镀锌薄钢板圆形 9-1~9-5 按直径、矩形 9-6~9-11 按长边长分档，单位 10m²）。</li>
+                    <li><strong>通风管道（本批新增）</strong>：名称含<strong>镀锌钢板 / 风道 / 通风管道</strong>等字眼即视为常规碳钢通风管道，清单统一 <code>030702001 碳钢通风管道</code>；<strong>矩形</strong>按<strong>长边长</strong>套 9-6~9-11（320/450/1000/1250/2000/4000mm以内），如 <code>矩形风道600*400</code>、<code>1000*400</code> 均套 <strong>9-8 镀锌钢板矩形风管 长边长1000mm以内</strong>；<strong>圆形</strong>按<strong>直径</strong>套 9-1~9-5（320/450/1000/1250/2000mm以内），清单编码不变。同一定额的多条风管<strong>自动合并工程量</strong>，项目名称替换为定额名称（如 600×400 200㎡ + 800×400 600㎡ + 1000×400 400㎡ → 合并为 9-8，工程量 1200㎡）。板厚随档位取 0.5/0.6/0.75/1.0/1.2mm，主材按镀锌钢板信息价计。</li>
+                    <li><strong>价格依据</strong>：风管主材按<strong>天津市当月信息价</strong>（镀锌钢板除税价，按板厚档换算 元/㎡）；其余设备材料参考<strong>天津市当月信息价及合理市场价标准</strong>进行组价，单价均可在 <code>data/prices.js</code> 调整。</li>
                 </ul>
             </div>
 
@@ -100,7 +101,7 @@
                 <div class="summary-card"><div class="number" id="totalCount">0</div><div class="label">项目总数（条）</div></div>
                 <div class="summary-card teal2"><div class="number" id="catDev">0</div><div class="label">通风空调设备</div></div>
                 <div class="summary-card teal2"><div class="number" id="catVent">0</div><div class="label">风口风阀</div></div>
-                <div class="summary-card teal2"><div class="number" id="catDuct">0</div><div class="label">风管</div></div>
+                <div class="summary-card teal2"><div class="number" id="catDuct">0</div><div class="label">碳钢风管</div></div>
                 <div class="summary-card teal2"><div class="number" id="catOther">0</div><div class="label">消声器·静压箱</div></div>
                 <div class="summary-card amber"><div class="number" id="pendingCount">0</div><div class="label">待询价</div></div>
                 <div class="summary-card"><div class="number" id="totalPrice">¥0</div><div class="label">主材费合计（元）</div></div>
@@ -113,7 +114,7 @@
 
             <div class="result-area" id="resultArea" style="display:none;">
                 <div class="result-header"><h2>📊 组价结果预览</h2></div>
-                <p class="legend">说明：<span class="tag tag-market">市场价</span>=国产中高档/合资品牌市场参考价（悬停看计算公式与品牌）；<span class="tag tag-pending">待询价</span>=暂无参考价需人工补；<span class="tag tag-infer">推</span>=定额编号区间内推算需核对基价表；⚠️黄色行请人工核对（多为缺参数或需手选定额）。</p>
+                <p class="legend">说明：<span class="tag tag-info">信息价</span>=按天津市当月信息价换算（悬停看换算过程）；<span class="tag tag-market">市场价</span>=国产中高档/合资品牌市场参考价（悬停看计算公式与品牌）；<span class="tag tag-pending">待询价</span>=暂无参考价需人工补；<span class="tag tag-infer">推</span>=定额编号区间内推算需核对基价表；⚠️黄色行请人工核对（多为缺参数或需手选定额）。</p>
                 <div class="table-container">
                     <table id="resultTable">
                         <thead>
