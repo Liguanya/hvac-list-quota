@@ -23,6 +23,7 @@
         .status-bar { display: none; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-bottom: 18px; }
         .status-ok { background: #d4edda; color: #155724; }
         .status-err { background: #f8d7da; color: #721c24; }
+        .status-loading { background: #fff3cd; color: #856404; }
 
         .summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
         .summary-card { background: linear-gradient(135deg, #1a5e63 0%, #0d3d44 100%); color: #fff; border-radius: 10px; padding: 18px 10px; text-align: center; }
@@ -91,7 +92,7 @@
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📁</div>
                 <div class="upload-text">点击上传或拖拽工程量清单到此处</div>
-                <div class="upload-hint">支持 .xlsx、.xls 格式（通风机 / 空调器 / 风机盘管 / 油烟净化 / 风口 / 风阀 / 消声器 / 静压箱 / 人防密闭阀 / 风管）</div>
+                <div class="upload-hint">支持 .xlsx、.xls 格式（通风机 / 空调器 / 风机盘管 / 油烟净化 / 风口 / 风阀 / 消声器 / 静压箱 / 人防密闭阀 / 风管）<br>首次打开只加载精简解析库（约 250KB），上传 .xls 老格式时再按需补载完整库</div>
                 <input type="file" id="excelFile" accept=".xlsx,.xls">
             </div>
 
@@ -140,7 +141,7 @@
         </div>
     </div>
 
-    <script src="js/xlsx.full.min.js"></script>
+    <script src="js/xlsx.mini.min.js"></script>
     <script src="data/prices.js"></script>
     <script src="js/app.js"></script>
 </body>

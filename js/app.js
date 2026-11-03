@@ -1495,26 +1495,69 @@
     document.getElementById('resetBtn').addEventListener('click', function () { location.reload(); });
   });
 
+  function setBar(cls, text) {
+    var bar = document.getElementById('statusBar');
+    if (!bar) return;
+    bar.className = 'status-bar ' + cls;
+    bar.style.display = 'block';
+    bar.textContent = text;
+  }
+
+  // 精简库(xlsx.mini)不含 .xls(BIFF) 与部分编码表；遇到老格式时按需补载完整库
+  var fullXlsxState = 0, fullXlsxCbs = [];
+  function ensureFullXlsx(cb) {
+    if (window.__xlsxFull) return cb(null);
+    fullXlsxCbs.push(cb);
+    if (fullXlsxState === 1) return;
+    fullXlsxState = 1;
+    var s = document.createElement('script');
+    s.src = 'js/xlsx.full.min.js';
+    s.onload = function () {
+      window.__xlsxFull = true;
+      fullXlsxState = 2;
+      var l = fullXlsxCbs.slice(); fullXlsxCbs = [];
+      l.forEach(function (f) { f(null); });
+    };
+    s.onerror = function () {
+      fullXlsxState = 3;
+      var l = fullXlsxCbs.slice(); fullXlsxCbs = [];
+      l.forEach(function (f) { f(new Error('兼容组件加载失败，请检查网络后重试')); });
+    };
+    document.head.appendChild(s);
+  }
+
+  function parseWorkbook(buf) {
+    var wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    window._rawAOA = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    refreshAll();
+  }
+
   function readFile(file) {
     if (!/\.(xlsx|xls)$/i.test(file.name)) {
-      var bar = document.getElementById('statusBar');
-      bar.className = 'status-bar status-err';
-      bar.style.display = 'block';
-      bar.textContent = '请上传 .xlsx / .xls 文件';
+      setBar('status-err', '请上传 .xlsx / .xls 文件');
       return;
     }
+    var legacy = /\.xls$/i.test(file.name);
     var reader = new FileReader();
     reader.onload = function (e) {
+      var buf = e.target.result;
+      if (legacy) {
+        setBar('status-loading', '正在加载 .xls 兼容组件…');
+        ensureFullXlsx(function (err) {
+          if (err) { setBar('status-err', err.message); return; }
+          try { parseWorkbook(buf); } catch (err2) { setBar('status-err', '文件解析失败：' + err2.message); }
+        });
+        return;
+      }
       try {
-        var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
-        var ws = wb.Sheets[wb.SheetNames[0]];
-        window._rawAOA = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-        refreshAll();
+        parseWorkbook(buf);
       } catch (err) {
-        var b2 = document.getElementById('statusBar');
-        b2.className = 'status-bar status-err';
-        b2.style.display = 'block';
-        b2.textContent = '文件解析失败：' + err.message;
+        // 个别 .xlsx（特殊编码/加密外壳）精简库解析不了，自动升级完整库重试一次
+        ensureFullXlsx(function (e2) {
+          if (e2) { setBar('status-err', '文件解析失败：' + err.message); return; }
+          try { parseWorkbook(buf); } catch (err3) { setBar('status-err', '文件解析失败：' + err3.message); }
+        });
       }
     };
     reader.readAsArrayBuffer(file);
