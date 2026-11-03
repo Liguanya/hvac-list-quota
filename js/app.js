@@ -42,7 +42,15 @@
     transport: '030702301', // 通风管道场外运输（9-56）
     chiller: '030112001',   // 冷水机组（第一册 1-1130~1-1152）
     heatpump: '030112003',  // 热泵机组（1-1153~1-1164）
-    coolingTower: '030112006' // 冷却塔（1-1295~1-1303）
+    coolingTower: '030112006', // 冷却塔（1-1295~1-1303）
+    waterValve: '031002001',   // 金属阀门（第八册 8-579~8-584 螺纹 / 8-620~8-629 焊接法兰）
+    autoAir: '031002303',      // 自动排气阀（8-682）
+    tempValve: '031002306',    // 散热器温控阀（8-686）
+    floatValve: '031002301',   // 法兰浮球阀（8-612~8-616）
+    levelValve: '031002302',   // 法兰液压水位控制阀（8-645~8-649）
+    bracket: '031301005',      // 支/吊架、基础型钢（第七册 7-138）
+    insulRubber: '031208002',  // 其他管道绝热（11-582 橡塑）
+    insulGlass: '031208002'    // 其他管道绝热（11-647 离心玻璃棉）
   };
   var LIST_NAME = {
     heater: '空气加热器、冷却器', dedust: '除尘设备', acu: '空调器', fcu: '风机盘管',
@@ -52,7 +60,10 @@
     ductClean: '碳钢通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
     ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
     transport: '通风管道场外运输',
-    chiller: '冷水机组', heatpump: '热泵机组', coolingTower: '冷却塔'
+    chiller: '冷水机组', heatpump: '热泵机组', coolingTower: '冷却塔',
+    waterValve: '金属阀门', autoAir: '自动排气阀', tempValve: '散热器温控阀',
+    floatValve: '法兰浮球阀', levelValve: '液压水位控制阀',
+    bracket: '支/吊架、基础型钢', insulRubber: '其他管道绝热', insulGlass: '其他管道绝热'
   };
 
   // 未匹配清单/定额时统一套用的补充清单编码
@@ -67,7 +78,11 @@
     ductClean: '净化通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
     ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
     transport: '通风管道场外运输',
-    chiller: '冷水机组', heatpump: '热泵机组', coolingTower: '冷却塔', other: '其他（未匹配）'
+    chiller: '冷水机组', heatpump: '热泵机组', coolingTower: '冷却塔',
+    waterValve: '金属阀门', autoAir: '自动排气阀', tempValve: '散热器温控阀',
+    floatValve: '浮球阀', levelValve: '液压水位控制阀',
+    bracket: '管道支架', insulRubber: '橡塑保温', insulGlass: '离心玻璃棉保温',
+    other: '其他（未匹配）'
   };
 
   var CAT_WORK = {
@@ -96,6 +111,14 @@
     chiller: '设备开箱检验、基础放线、吊装就位、找平找正、地脚螺栓固定、单机试运转',
     heatpump: '设备开箱检验、吊装就位、找平找正、固定、冷热水管道接口、单机试运转',
     coolingTower: '设备开箱检验、塔体就位、找平找正、固定、填料及布水器安装、单机试运转',
+    waterValve: '阀体安装、法兰/螺纹连接、试压、调试',
+    autoAir: '阀体安装、螺纹连接、试压、调试',
+    tempValve: '温控阀及传感器安装、连接、调试',
+    floatValve: '阀体安装、法兰连接、试压、调试',
+    levelValve: '阀体安装、法兰连接、试压、调试',
+    bracket: '支吊架制作（切断、调直、钻孔、焊接、除锈刷油）、安装、固定',
+    insulRubber: '橡塑保温壳安装（下料、涂胶、粘贴、接缝处理）',
+    insulGlass: '带铝箔离心玻璃棉安装（下料、粘贴、铝箔胶带封缝、固定）',
     other: '待补充：请按实际做法填写工作内容'
   };
 
@@ -266,6 +289,19 @@
   var TOWER_TIERS = [T(30, '1-1295', '30m³/h以内'), T(50, '1-1296', '50m³/h以内'), T(70, '1-1297', '70m³/h以内'),
     T(100, '1-1298', '100m³/h以内'), T(150, '1-1299', '150m³/h以内'), T(250, '1-1300', '250m³/h以内'),
     T(300, '1-1301', '300m³/h以内'), T(500, '1-1302', '500m³/h以内'), T(700, '1-1303', '700m³/h以内')];
+
+  // ===== 水系统阀门（第八册第二章）=====
+  // 螺纹阀门 8-579~8-584：DN15/20/25/32/40/50；焊接法兰阀 8-620~8-629：DN65~400
+  var WVALVE_THREAD = [T(15, '8-579', '15mm以内'), T(20, '8-580', '20mm以内'), T(25, '8-581', '25mm以内'),
+    T(32, '8-582', '32mm以内'), T(40, '8-583', '40mm以内'), T(50, '8-584', '50mm以内')];
+  var WVALVE_FLANGE = [T(65, '8-620', '65mm以内'), T(80, '8-621', '80mm以内'), T(100, '8-622', '100mm以内'),
+    T(125, '8-623', '125mm以内'), T(150, '8-624', '150mm以内'), T(200, '8-625', '200mm以内'),
+    T(250, '8-626', '250mm以内'), T(300, '8-627', '300mm以内'), T(350, '8-628', '350mm以内'),
+    T(400, '8-629', '400mm以内')];
+  var FLOAT_TIERS = [T(32, '8-612', '32mm以内'), T(50, '8-613', '50mm以内'), T(80, '8-614', '80mm以内'),
+    T(100, '8-615', '100mm以内'), T(150, '8-616', '150mm以内')];
+  var LEVEL_TIERS = [T(50, '8-645', '50mm以内'), T(80, '8-646', '80mm以内'), T(100, '8-647', '100mm以内'),
+    T(150, '8-648', '150mm以内'), T(200, '8-649', '200mm以内')];
 
   function parseChillerType(name) {
     var t = String(name || '');
@@ -660,6 +696,55 @@
     return base;
   }
 
+  // 全部管道匹配完成后追加"管道支架"（031301005 + 7-138），主材型钢按信息价
+  // 用户表内已提供支架行时不重复新增；工程量按管道长度×分档含量估算
+  function bracketWeightPerM(dn) {
+    var tbl = P.bracket.weightPerM;
+    if (!(dn > 0)) return 0.60;
+    for (var i = 0; i < tbl.length; i++) if (dn <= tbl[i].max) return tbl[i].w;
+    return tbl[tbl.length - 1].w;
+  }
+  function withBracket(items) {
+    var hasPipe = false, exists = false, total = 0, pipeLen = 0;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it.category === 'bracket') exists = true;
+      if (PIPE && PIPE.LIST[it.category]) {
+        hasPipe = true;
+        pipeLen += (it.quantity || 0);
+        total += (it.quantity || 0) * bracketWeightPerM(it.dn);
+      }
+    }
+    if (!hasPipe || exists) return items;
+    total = Math.round(total * 10) / 10;
+    if (!(total > 0)) return items;
+    var row = {
+      index: String(items.length + 1),
+      name: '管道支架',
+      unit: 'kg',
+      quantity: total,
+      brand: '型钢（信息价）',
+      category: 'bracket',
+      categoryLabel: CAT_LABEL.bracket,
+      sub: '',
+      dn: null,
+      dim: { length: 0, width: 0, height: 0, diameter: 0 },
+      perimeter: 0,
+      listCode: LIST.bracket,
+      listName: LIST_NAME.bracket,
+      quotaCode: '7-138',
+      quotaName: '管道支架制作、安装 管道支吊架',
+      price: P.bracket.steel,
+      priceSource: 'info',
+      priceBasis: '信息价：型钢（角钢、槽钢）' + P.bracket.steel + '元/kg',
+      priceBrand: '',
+      warn: '管道支架为自动补项：工程量按管道总长' + +pipeLen.toFixed(2) + 'm 与管径分档含量估算约' + total + 'kg（0.45~3.2kg/m），定额 7-138 计量单位为100kg，请按图纸支架实际重量调整'
+    };
+    row.features = '1.名称：管道支架（支/吊架、基础型钢）\n2.材质：型钢（角钢、槽钢）制作\n3.工作内容：切断、调直、钻孔、焊接、除锈刷油、安装固定\n4.主材：型钢按信息价' + P.bracket.steel + '元/kg 计入\n5.工程量：按管道长度估算' + total + 'kg，请按图纸核实';
+    items.push(row);
+    return items;
+  }
+
   // 风机类型
   function parseFanType(name) {
     if (/离心/.test(name)) return 'centrifugal';
@@ -736,6 +821,44 @@
   // ============================================================
   // 分类
   // ============================================================
+  // ===== 水系统阀门识别（风阀走 030703001，水阀走 031002001 及四类特殊清单）=====
+  function parseValveDn(name) {
+    var s2 = String(name || '');
+    var m = s2.match(/(?:DN|dn|De|de|D|Φ|φ|Ø)\s*[-－]?\s*(\d{2,4})/);
+    if (m) return parseInt(m[1], 10);
+    m = s2.match(/(\d{2,4})\s*(?:mm|MM|毫米)/);
+    if (m) return parseInt(m[1], 10);
+    return null;
+  }
+  // 严格管径：仅认 DN/De（用于区分"蝶阀 φ300"这类风阀口径）
+  function parseValveDnStrict(name) {
+    var m = String(name || '').match(/(?:DN|dn|De|de)\s*[-－]?\s*(\d{2,4})/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  // 阀种（决定取信息价还是市场价）
+  function parseWaterValveKind(name) {
+    var s2 = String(name || '');
+    if (/闸阀/.test(s2)) return 'gate';
+    if (/截止阀/.test(s2)) return 'globe';
+    if (/蝶阀/.test(s2)) return 'butterfly';
+    if (/止回阀|逆止阀/.test(s2)) return 'check';
+    if (/Y型过滤器|y型过滤器|过滤器/.test(s2)) return 'strainer';
+    if (/球阀/.test(s2)) return 'ball';
+    return 'market';
+  }
+  function isWaterValveName(n) {
+    if (/防火|排烟|风管|风道|多叶|密闭|定风量|超压|初效|中效|高效|空气过滤|过滤吸收/.test(n)) return false;
+    if (/自动排气阀|放风阀/.test(n)) return true;
+    if (/温控阀|浮球阀|水位控制阀/.test(n)) return true;
+    if (/截止阀|闸阀|球阀|Y型过滤器|y型过滤器|过滤器|软接头|橡胶软接头|补偿器|波纹补偿器|平衡阀|减压阀|电磁阀|水阀/.test(n)) return true;
+    // 蝶阀/止回阀/阀门/阀：仅当显式写 DN/De（不是风阀口径 φ/截面尺寸）时按水阀处理
+    if (/蝶阀|止回阀|阀门|阀/.test(n)) {
+      var dn = parseValveDnStrict(n);
+      if (dn && !/\d{2,4}\s*[×xX*]\s*\d{2,4}/.test(n)) return true;
+    }
+    return false;
+  }
+
   function classify(name) {
     if (!name) return null;
     var n = String(name);
@@ -745,6 +868,17 @@
     if (/消声器|消声弯头|消声静压/.test(n)) return 'silencer';
     // 人防密闭阀
     if (/人防/.test(n) && /密闭|阀门|阀/.test(n)) return 'renfang';
+    // 绝热（031208002）：橡塑 / 离心玻璃棉，须先于风管与管道判断
+    if (/橡塑/.test(n) && /保温|绝热|管|板|壳/.test(n)) return 'insulRubber';
+    if (/(离心)?玻璃棉/.test(n)) return 'insulGlass';
+    // 水系统阀门：自动排气阀 / 温控阀 / 浮球阀 / 水位控制阀 / 通用金属阀门
+    if (isWaterValveName(n)) {
+      if (/自动排气阀|放风阀/.test(n)) return 'autoAir';
+      if (/温控阀/.test(n)) return 'tempValve';
+      if (/浮球阀/.test(n)) return 'floatValve';
+      if (/水位控制阀/.test(n)) return 'levelValve';
+      return 'waterValve';
+    }
     // 风口类（防火风口、多叶送/排烟口、板式排烟口、散流器、百叶、风口）
     if (/防火风口/.test(n)) return 'vent';
     if (/多叶送|多叶排烟|多叶送风|多叶排风/.test(n)) return 'vent';
@@ -831,6 +965,37 @@
       it.sub = 'tower';
       it.waterFlow = parseWaterFlow(name);
       it.brand = P.coolingTower.brands.map(function (b) { return b.name.replace(/（.*?）/g, ''); }).join('/');
+    }
+    // 水系统阀门（031002001 及四类特殊清单）
+    if (category === 'waterValve' || category === 'autoAir' || category === 'tempValve' ||
+        category === 'floatValve' || category === 'levelValve') {
+      it.unit = '个';
+      it.dn = parseValveDn(name);
+      it.valveKind = parseWaterValveKind(name);
+      var vcfg = P.waterValve;
+      if (category === 'waterValve') {
+        // 有信息价的阀种不标品牌（页面只显示"信息价"），无信息价的给市场价品牌
+        it.brand = vcfg.info[it.valveKind] ? '' : vcfg.brand;
+      }
+      else {
+        var spKey = { autoAir: 'autoAir', tempValve: 'temp', floatValve: 'float', levelValve: 'level' }[category];
+        var spc = vcfg.special[spKey];
+        it.brand = (spc.source === 'info') ? '' : (spc.brand || vcfg.brand);
+        it.sub = spKey;
+      }
+    }
+    // 管道支架（031301005 + 7-138），主材型钢按信息价
+    if (category === 'bracket') {
+      it.unit = 'kg';
+      it.brand = '型钢（信息价）';
+    }
+    // 绝热（031208002）
+    if (category === 'insulRubber' || category === 'insulGlass') {
+      it.unit = 'm³';
+      it.dn = PIPE ? PIPE.parseDN(name) : null;
+      var icfg = category === 'insulRubber' ? P.insul.rubber : P.insul.glass;
+      it.brand = icfg.brand;
+      it.insulThk = category === 'insulRubber' ? 30 : 40;
     }
     // 管道：整段交给管道模块解析（材质/管径/介质/部位/连接方式）
     if (PIPE && PIPE.LIST[category]) {
@@ -930,6 +1095,43 @@
         code: TOWER_TIERS[ti2].code, name: '玻璃钢冷却塔 设备处理水量' + TOWER_TIERS[ti2].label,
         inferred: false, overRange: noFlow ? false : overOf(TOWER_TIERS, tf), keepList: true, noFlow: noFlow
       };
+    }
+    // 水系统阀门：DN15~50 螺纹阀门 8-579~584；DN65~400 焊接法兰阀 8-620~629；>400 取 8-629
+    if (it.category === 'waterValve') {
+      var wdn = it.dn;
+      if (!(wdn > 0)) return { code: '8-579', name: '螺纹阀门 公称直径15mm以内', inferred: false, keepList: true, noDn: true };
+      if (wdn <= 50) {
+        var wti = tierIndex(WVALVE_THREAD, wdn);
+        return { code: WVALVE_THREAD[wti].code, name: '螺纹阀门 公称直径' + WVALVE_THREAD[wti].label, inferred: false, keepList: true };
+      }
+      var wfi = tierIndex(WVALVE_FLANGE, wdn);
+      return {
+        code: WVALVE_FLANGE[wfi].code, name: '焊接法兰阀门 公称直径' + WVALVE_FLANGE[wfi].label,
+        inferred: false, overRange: overOf(WVALVE_FLANGE, wdn), keepList: true
+      };
+    }
+    if (it.category === 'autoAir') return { code: '8-682', name: '自动排气阀、手动放风阀 公称直径25mm以内', inferred: false, keepList: true };
+    if (it.category === 'tempValve') return { code: '8-686', name: '散热器温控阀 公称直径25mm以内', inferred: false, keepList: true };
+    if (it.category === 'floatValve') {
+      var fdn = it.dn, noF = !(fdn > 0);
+      var fi = tierIndex(FLOAT_TIERS, fdn); if (fi < 0) fi = 0;
+      return { code: FLOAT_TIERS[fi].code, name: '法兰浮球阀 公称直径' + FLOAT_TIERS[fi].label, inferred: false, keepList: true, noDn: noF, overRange: noF ? false : overOf(FLOAT_TIERS, fdn) };
+    }
+    if (it.category === 'levelValve') {
+      var ldn = it.dn, noL = !(ldn > 0);
+      var li = tierIndex(LEVEL_TIERS, ldn); if (li < 0) li = 0;
+      return { code: LEVEL_TIERS[li].code, name: '法兰液压水位控制阀 公称直径' + LEVEL_TIERS[li].label, inferred: false, keepList: true, noDn: noL, overRange: noL ? false : overOf(LEVEL_TIERS, ldn) };
+    }
+    // 管道支架（第七册 7-138，定额单位 100kg）
+    if (it.category === 'bracket') {
+      return { code: '7-138', name: '管道支架制作、安装 管道支吊架', inferred: false, keepList: true, unit: '100kg', factor: 100 };
+    }
+    // 绝热（第十一册）
+    if (it.category === 'insulRubber') {
+      return { code: '11-582', name: '管道橡塑保温壳安装（管道） 管径D133mm以内', inferred: false, keepList: true, unit: 'm³', factor: 1 };
+    }
+    if (it.category === 'insulGlass') {
+      return { code: '11-647', name: '带铝箔离心玻璃棉安装 通风管道 厚度40mm', inferred: false, keepList: true, unit: 'm³', factor: 1 };
     }
     // 管道：交给管道模块（第八册）
     if (PIPE && PIPE.LIST[it.category]) return PIPE.matchQuota(it);
@@ -1105,6 +1307,48 @@
   }
 
   // 制冷设备/冷却塔：国产中高档品牌询价，单价 = 档位基准价 × 品牌系数，basis 列 3 个品牌参考价
+  // 就近档位：返回 dns 中第一个 >= dn 的下标，超出取最后一档
+  function nearIdx(arr, v) {
+    if (!(v > 0)) return 0;
+    for (var i = 0; i < arr.length; i++) if (v <= arr[i]) return i;
+    return arr.length - 1;
+  }
+
+  // 水系统阀门主材价：有信息价取信息价（不标品牌），无信息价取市场价并给参考品牌
+  function valveWaterPrice(it) {
+    var vc = P.waterValve, dn = it.dn;
+    if (it.category === 'waterValve') {
+      var kind = it.valveKind || 'market';
+      var t = vc.info[kind];
+      if (t) {
+        var i1 = nearIdx(t.dns, dn);
+        return {
+          price: t.prices[i1], source: 'info',
+          basis: '信息价：' + t.name + ' DN' + t.dns[i1] + ' ' + t.prices[i1] + '元/个' +
+            (dn > 0 && t.dns[i1] !== dn ? '（DN' + dn + '按相邻档取定）' : '')
+        };
+      }
+      var i2 = nearIdx(vc.market.dns, dn);
+      return {
+        price: vc.market.prices[i2], source: 'market', brand: vc.brand,
+        basis: '市场价（' + vc.brand + '）：' + (it.name || '阀门') + ' DN' + vc.market.dns[i2] + ' ' + vc.market.prices[i2] + '元/个（该阀种无信息价，按市场价计）'
+      };
+    }
+    var key = { autoAir: 'autoAir', tempValve: 'temp', floatValve: 'float', levelValve: 'level' }[it.category];
+    var sp = vc.special[key];
+    var i3 = nearIdx(sp.dns, dn);
+    if (sp.source === 'info') {
+      return {
+        price: sp.prices[i3], source: 'info',
+        basis: '信息价：' + sp.name + ' DN' + sp.dns[i3] + ' ' + sp.prices[i3] + '元/个'
+      };
+    }
+    return {
+      price: sp.prices[i3], source: 'market', brand: sp.brand || vc.brand,
+      basis: '市场价（' + (sp.brand || vc.brand) + '）：' + sp.name + ' DN' + sp.dns[i3] + ' ' + sp.prices[i3] + '元/个'
+    };
+  }
+
   function equipPrice(cfg, tiers, v, metricCn) {
     if (!cfg || !tiers) return { price: null, source: 'pending', basis: '' };
     var noParam = !(v > 0);
@@ -1129,6 +1373,20 @@
     if (it.category === 'chiller') return equipPrice(P.chiller, P.chiller[it.sub] || P.chiller.piston, it.coolKw, '制冷量kW');
     if (it.category === 'heatpump') return equipPrice(P.heatpump, P.heatpump.tiers, it.coolKw, '制冷量kW');
     if (it.category === 'coolingTower') return equipPrice(P.coolingTower, P.coolingTower.tiers, it.waterFlow, '处理水量m³/h');
+    if (it.category === 'waterValve' || it.category === 'autoAir' || it.category === 'tempValve' ||
+        it.category === 'floatValve' || it.category === 'levelValve') return valveWaterPrice(it);
+    if (it.category === 'bracket') {
+      return {
+        price: P.bracket.steel, source: 'info',
+        basis: '信息价：型钢（角钢、槽钢）' + P.bracket.steel + '元/kg，支架主材按型钢重量计入'
+      };
+    }
+    if (it.category === 'insulRubber') {
+      return { price: P.insul.rubber.price, source: 'market', brand: P.insul.rubber.brand, basis: '市场价（' + P.insul.rubber.brand + '）：橡塑保温材料 ' + P.insul.rubber.price + '元/m³' };
+    }
+    if (it.category === 'insulGlass') {
+      return { price: P.insul.glass.price, source: 'market', brand: P.insul.glass.brand, basis: '市场价（' + P.insul.glass.brand + '）：带铝箔离心玻璃棉 ' + P.insul.glass.price + '元/m³（厚40mm）' };
+    }
     if (PIPE && PIPE.LIST[it.category]) {
       var pq = PIPE.lookupPrice(it);
       if (pq) return pq;
@@ -1434,6 +1692,11 @@
     if (quota.noFlow) w.push('名称未注处理水量（如 300m³/h），已按最小档 ' + quota.code + ' 计列，请按实际水量核对');
     if (it.category === 'chiller' && it.chillerAuto) w.push('名称未注明活塞式/离心式/螺杆式，暂按活塞式（1-1130~1137）计列，可在"类型/选型"列切换');
     if (quota.needDn) w.push('未识别公称直径，请在名称中注明（如 DN100 / De110）');
+    if (quota.noDn && it.category === 'waterValve') w.push('名称未注阀门公称直径（如 DN100），已按螺纹阀门最小档 8-579（DN15）计列，请核对');
+    if (quota.noDn && (it.category === 'floatValve' || it.category === 'levelValve')) w.push('名称未注公称直径，已按本类最小档 ' + quota.code + ' 计列，请核对');
+    if (it.category === 'bracket') w.push('管道支架工程量按管道长度估算（0.45~3.2kg/m，按管径分档），请按图纸支架实际重量调整');
+    if (it.category === 'insulRubber') w.push('橡塑保温按保温体积（m³）计，厚度按30mm 取定；若按管道长度计量请在单位列填 m、按面积填 m²，将自动折算体积');
+    if (it.category === 'insulGlass') w.push('离心玻璃棉按保温体积（m³）计，厚度按定额40mm（面积×0.04）；若按风管面积计量请在单位列填 m²');
     if (PIPE && PIPE.LIST[it.category]) {
       var pw = PIPE.buildWarn(it, quota);
       if (pw) w.push(pw);
@@ -1505,6 +1768,14 @@
     }
     if (it.category === 'heatpump') return it.coolKw ? '制冷量' + it.coolKw + 'kW 热泵机组' : '热泵机组';
     if (it.category === 'coolingTower') return it.waterFlow ? '处理水量' + it.waterFlow + 'm³/h' : '';
+    if (it.category === 'waterValve') return it.dn ? 'DN' + it.dn : '';
+    if (it.category === 'autoAir') return (it.dn ? 'DN' + it.dn + ' ' : 'DN25 ') + '自动排气阀/手动放风阀';
+    if (it.category === 'tempValve') return (it.dn ? 'DN' + it.dn + ' ' : 'DN25 ') + '散热器温控阀';
+    if (it.category === 'floatValve') return (it.dn ? 'DN' + it.dn + ' ' : '') + '法兰浮球阀';
+    if (it.category === 'levelValve') return (it.dn ? 'DN' + it.dn + ' ' : '') + '法兰液压水位控制阀';
+    if (it.category === 'bracket') return '管道支吊架（型钢制作安装）';
+    if (it.category === 'insulRubber') return '橡塑保温壳 δ30mm' + (it.dn ? ' 管道DN' + it.dn : '');
+    if (it.category === 'insulGlass') return '带铝箔离心玻璃棉 δ40mm' + (it.dn ? ' 管道DN' + it.dn : '');
     if (PIPE && PIPE.LIST[it.category]) return PIPE.specCell(it) || '管径待识别';
     // 风管类：合并行显示定额档规格；未合并显示实际尺寸 + 板厚/壁厚
     if (isDuctCat(it.category)) {
@@ -1526,6 +1797,14 @@
     if (it.category === 'chiller') return { piston: '活塞式冷水机组', centrifugal: '离心式冷水机组', screw: '螺杆式冷水机组' }[it.sub] || '';
     if (it.category === 'heatpump') return '热泵冷（热）水机组';
     if (it.category === 'coolingTower') return '玻璃钢冷却塔';
+    if (it.category === 'waterValve') return it.dn ? (it.dn <= 50 ? '螺纹连接' : '焊接法兰连接') : '';
+    if (it.category === 'autoAir') return '自动排气阀/手动放风阀';
+    if (it.category === 'tempValve') return '散热器温控阀';
+    if (it.category === 'floatValve') return '法兰浮球阀';
+    if (it.category === 'levelValve') return '法兰液压水位控制阀';
+    if (it.category === 'bracket') return '支/吊架、基础型钢';
+    if (it.category === 'insulRubber') return '橡塑保温壳安装';
+    if (it.category === 'insulGlass') return '带铝箔离心玻璃棉安装';
     if (PIPE && PIPE.LIST[it.category]) {
       return (it.loc === 'out' ? '室外' : '室内') + ' ' + (PIPE.JOINT_CN2[it.joint] || PIPE.JOINT_CN[it.joint] || '');
     }
@@ -1568,7 +1847,8 @@
   // ============================================================
   // 主流程
   // ============================================================
-  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, ductClean: 1, ductSS: 1, ductPlastic: 1, ductFrp: 1, ductComp: 1, ductFlex: 1, transport: 1, chiller: 1, heatpump: 1, coolingTower: 1, other: 1 };
+  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, ductClean: 1, ductSS: 1, ductPlastic: 1, ductFrp: 1, ductComp: 1, ductFlex: 1, transport: 1, chiller: 1, heatpump: 1, coolingTower: 1,
+    waterValve: 1, autoAir: 1, tempValve: 1, floatValve: 1, levelValve: 1, bracket: 1, insulRubber: 1, insulGlass: 1, other: 1 };
   if (PIPE) Object.keys(PIPE.LIST).forEach(function (k) { PRICED_CATS[k] = 1; });
 
   // 补充定额编号：补1、补2……（同一行始终复用同一编号，切换类型不重排）
@@ -1707,9 +1987,27 @@
           if (looksUnit(row[c3])) { unitCell = normUnit(row[c3]); break; }
         }
       }
-      it.unit = unitCell || ((it.category === 'vent' || it.category === 'valve' || it.category === 'silencer' ||
-        it.category === 'plenum' || it.category === 'renfang') ? '个'
-        : ((it.category === 'ductFlex' || (PIPE && PIPE.LIST[it.category])) ? 'm' : (isDuctCat(it.category) ? 'm²' : '台')));
+      var defUnit = '台';
+      if (/^(vent|valve|silencer|plenum|renfang|waterValve|autoAir|tempValve|floatValve|levelValve)$/.test(it.category)) defUnit = '个';
+      else if (it.category === 'bracket') defUnit = 'kg';
+      else if (it.category === 'insulRubber' || it.category === 'insulGlass') defUnit = 'm³';
+      else if (it.category === 'ductFlex' || (PIPE && PIPE.LIST[it.category])) defUnit = 'm';
+      else if (isDuctCat(it.category)) defUnit = 'm²';
+      it.unit = unitCell || defUnit;
+
+      // 绝热行：若用户给的是面积(m²)或长度(m)，折算为保温体积(m³)
+      if (it.category === 'insulRubber' || it.category === 'insulGlass') {
+        var thkM = (it.insulThk || 30) / 1000;
+        if (it.unit === 'm²') {
+          it.quantity = +(it.quantity * thkM).toFixed(2);
+          it.insulConv = '按面积' + qty + 'm² × 厚' + it.insulThk + 'mm 折算体积';
+          it.unit = 'm³';
+        } else if (it.unit === 'm' && it.dn > 0) {
+          it.quantity = +(it.quantity * Math.PI * ((it.dn + it.insulThk) / 1000) * thkM).toFixed(2);
+          it.insulConv = '按长度' + qty + 'm × π×(DN' + it.dn + '+δ' + it.insulThk + ') × δ 折算体积';
+          it.unit = 'm³';
+        }
+      }
 
       var quota = matchQuota(it);
       quota = applySupp(it, quota);
@@ -1736,7 +2034,7 @@
       it.features = generateFeature('guanglianda', it);
       results.push(it);
     }
-    return withTransport(mergeDucts(results));
+    return withTransport(withBracket(mergeDucts(results)));
   }
 
   function recomputeQuota(it) {
@@ -1848,9 +2146,11 @@
     var n = data.length, dev = 0, ovo = 0, other = 0, duct = 0, pending = 0, total = 0;
     for (var i = 0; i < data.length; i++) {
       var d = data[i];
-      if (isDuctCat(d.category) || d.category === 'transport' || (PIPE && PIPE.LIST[d.category])) duct++;
-      else if (d.category === 'vent' || d.category === 'valve' || d.category === 'renfang') ovo++;
-      else if (d.category === 'silencer' || d.category === 'plenum') other++;
+      if (isDuctCat(d.category) || d.category === 'transport' || d.category === 'bracket' || (PIPE && PIPE.LIST[d.category])) duct++;
+      else if (d.category === 'vent' || d.category === 'valve' || d.category === 'renfang' ||
+        d.category === 'waterValve' || d.category === 'autoAir' || d.category === 'tempValve' ||
+        d.category === 'floatValve' || d.category === 'levelValve') ovo++;
+      else if (d.category === 'silencer' || d.category === 'plenum' || d.category === 'insulRubber' || d.category === 'insulGlass') other++;
       else dev++;
       if (PRICED_CATS[d.category] && d.price === null && d.priceSource !== 'none') pending++;
       if (d.price !== null && d.price !== undefined) total += d.price * d.quantity;
@@ -2116,6 +2416,13 @@
         recomputeQuota(it); recomputePrice(it); it.features = generateFeature('guanglianda', it);
         renderTable(exportData);
       },
+      setDn: function (i, dn) {
+        var it = exportData[i];
+        it.dn = dn ? parseInt(dn, 10) : null;
+        recomputeQuota(it); recomputePrice(it); it.features = generateFeature('guanglianda', it);
+        renderTable(exportData);
+      },
+      withBracket: withBracket, valveWaterPrice: valveWaterPrice, bracketWeightPerM: bracketWeightPerM,
       PIPE: PIPE
     };
   }
@@ -2135,7 +2442,10 @@
       buildWarn: buildWarn, exportGLD: exportGLD, exportJianjing: exportJianjing,
       CHILLER_TIERS: CHILLER_TIERS, HEATPUMP_TIERS: HEATPUMP_TIERS, TOWER_TIERS: TOWER_TIERS,
       parseChillerType: parseChillerType, parseWaterFlow: parseWaterFlow, equipPrice: equipPrice,
-      typeLabel: typeLabel, PIPE: PIPE
+      typeLabel: typeLabel, PIPE: PIPE,
+      WVALVE_THREAD: WVALVE_THREAD, WVALVE_FLANGE: WVALVE_FLANGE, FLOAT_TIERS: FLOAT_TIERS, LEVEL_TIERS: LEVEL_TIERS,
+      parseValveDn: parseValveDn, parseValveDnStrict: parseValveDnStrict, parseWaterValveKind: parseWaterValveKind, isWaterValveName: isWaterValveName,
+      valveWaterPrice: valveWaterPrice, withBracket: withBracket, bracketWeightPerM: bracketWeightPerM
     };
   }
 })();

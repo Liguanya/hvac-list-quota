@@ -567,7 +567,7 @@ ck('不锈钢风道不被识别为管道', A.classify('不锈钢风道 φ500'), 
 ck('塑料风管不被识别为管道', A.classify('塑料风管 400*200'), 'ductPlastic');
 
 var pipeRows = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢管 DN100', 60], [2, '焊接钢管 DN150', 30]]);
-ck('管道解析条数', pipeRows.length, 2);
+ck('管道解析条数（2管道+支架）', pipeRows.length, 3);
 ck('管道主材价', pipeRows[0].price, 52);
 ck('管道价格来源市场价', pipeRows[0].priceSource, 'market');
 ck('管道价格旁品牌', /天津利达/.test(pipeRows[0].priceBrand), true);
@@ -590,12 +590,92 @@ var mix = A.parseRows([['序号', '项目名称', '数量'],
   [4, '镀锌钢板矩形风管 1000*400', 200],
   [5, '镀锌钢管 DN100', 80],
   [6, 'PPR管 De32', 120]]);
-ck('混合条数（3设备+1风管+2管道+运输）', mix.length, 7);
+ck('混合条数（3设备+1风管+2管道+支架+运输）', mix.length, 8);
 ck('混合含运输行', mix[mix.length - 1].category, 'transport');
 ck('运输量只算风管', mix[mix.length - 1].quantity, 200);
 ck('混合设备条数', mix.filter(function (x) { return x.category === 'chiller' || x.category === 'coolingTower' || x.category === 'heatpump'; }).length, 3);
 ck('混合管道条数', mix.filter(function (x) { return x.unit === 'm'; }).length, 2);
 ck('冷水机组主材合计', mix.filter(function (x) { return x.category === 'chiller'; })[0].quantity * mix.filter(function (x) { return x.category === 'chiller'; })[0].price, 1360000);
+
+console.log('== 水系统阀门（031002001 + 8-579~584 / 8-620~629）==');
+ck('闸阀分类', A.classify('闸阀 DN100'), 'waterValve');
+ck('Y型过滤器分类', A.classify('Y型过滤器 DN150'), 'waterValve');
+ck('橡胶软接头分类', A.classify('橡胶软接头 DN200'), 'waterValve');
+ck('波纹补偿器分类', A.classify('波纹补偿器 DN300'), 'waterValve');
+ck('蝶阀带DN归水阀', A.classify('蝶阀 DN200'), 'waterValve');
+ck('蝶阀带尺寸归风阀', A.classify('蝶阀 1000×400'), 'valve');
+ck('防火阀仍为风阀', A.classify('防火阀 800×400'), 'valve');
+var wv = one('闸阀 DN32');
+ck('DN32螺纹阀门8-582', wv.code, '8-582');
+ck('DN32清单031002001', wv.list, '031002001');
+ck('DN32取信息价', A.lookupPrice(wv.it).source, 'info');
+ck('闸阀DN32信息价95', A.lookupPrice(wv.it).price, 95);
+var wv2 = one('闸阀 DN100');
+ck('DN100焊接法兰8-622', wv2.code, '8-622');
+ck('DN100闸阀信息价290', A.lookupPrice(wv2.it).price, 290);
+var wv3 = one('闸阀 DN500');
+ck('DN500取8-629', wv3.code, '8-629');
+ck('DN500超档提示', /超本类最大档/.test(wv3.it.category === 'waterValve' ? A.buildWarn(wv3.it, { overRange: true }) : ''), true);
+var wv4 = one('橡胶软接头 DN200');
+ck('软接头市场价', A.lookupPrice(wv4.it).source, 'market');
+ck('软接头标品牌', /冠龙/.test(A.lookupPrice(wv4.it).brand || ''), true);
+var wv5 = one('阀门');
+ck('无DN阀门仍按风阀', wv5.cat, 'valve');
+
+console.log('== 特殊阀门四类 ==');
+var aa = one('自动排气阀 DN25');
+ck('自动排气阀分类', aa.cat, 'autoAir');
+ck('自动排气阀8-682', aa.code, '8-682');
+ck('自动排气阀清单031002303', aa.list, '031002303');
+ck('自动排气阀信息价', A.lookupPrice(aa.it).source, 'info');
+var tv = one('散热器温控阀 DN25');
+ck('温控阀8-686', tv.code, '8-686');
+ck('温控阀清单031002306', tv.list, '031002306');
+ck('温控阀市场价', A.lookupPrice(tv.it).source, 'market');
+var fv = one('浮球阀 DN100');
+ck('浮球阀分类', fv.cat, 'floatValve');
+ck('浮球阀8-615', fv.code, '8-615');
+ck('浮球阀清单031002301', fv.list, '031002301');
+ck('浮球阀市场价480', A.lookupPrice(fv.it).price, 480);
+var lv = one('液压水位控制阀 DN150');
+ck('水位控制阀分类', lv.cat, 'levelValve');
+ck('水位控制阀8-648', lv.code, '8-648');
+ck('水位控制阀清单031002302', lv.list, '031002302');
+ck('水位控制阀市场价1900', A.lookupPrice(lv.it).price, 1900);
+
+console.log('== 保温绝热（031208002）==');
+ck('橡塑分类', A.classify('橡塑保温管壳'), 'insulRubber');
+ck('玻璃棉分类', A.classify('离心玻璃棉保温'), 'insulGlass');
+var ir = one('橡塑保温管壳 DN100');
+ck('橡塑11-582', ir.code, '11-582');
+ck('橡塑清单031208002', ir.list, '031208002');
+ck('橡塑主材1000', A.lookupPrice(ir.it).price, 1000);
+ck('橡塑单位m³', ir.it.unit, 'm³');
+var ig = one('离心玻璃棉保温');
+ck('玻璃棉11-647', ig.code, '11-647');
+ck('玻璃棉主材450', A.lookupPrice(ig.it).price, 450);
+
+console.log('== 管道支架自动补项（031301005 + 7-138）==');
+var brRows = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢管 DN100', 80], [2, '无缝钢管 DN150', 60]]);
+var br = brRows.filter(function (x) { return x.category === 'bracket'; });
+ck('有管道必补支架', br.length, 1);
+ck('支架清单031301005', br[0].listCode, '031301005');
+ck('支架定额7-138', br[0].quotaCode, '7-138');
+ck('支架单位kg', br[0].unit, 'kg');
+ck('支架工程量80*0.9+60*1.5=162', br[0].quantity, 162);
+ck('支架主材信息价4.2', br[0].price, 4.2);
+ck('支架价格来源信息价', br[0].priceSource, 'info');
+ck('支架在管道行之后', brRows.indexOf(br[0]) > brRows.findIndex(function (x) { return x.category === 'seamless'; }), true);
+var brRows2 = A.parseRows([['序号', '项目名称', '数量'], [1, '管道支架 150kg', 150], [2, '镀锌钢管 DN100', 80]]);
+ck('原表已带支架不重复', brRows2.filter(function (x) { return x.category === 'bracket'; }).length, 1);
+ck('无管道不补支架', A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢板风管 1000*400', 100]]).filter(function (x) { return x.category === 'bracket'; }).length, 0);
+
+console.log('== 保温单位折算 ==');
+var conv = A.parseRows([['序号', '项目名称', '数量', '单位'], [1, '橡塑保温管壳 DN100', 100, 'm']]);
+ck('橡塑按长度折算体积', conv[0].unit, 'm³');
+ck('橡塑100m DN100 折1.23m³', conv[0].quantity, 1.23);
+var conv2 = A.parseRows([['序号', '项目名称', '数量', '单位'], [1, '离心玻璃棉保温', 100, 'm²']]);
+ck('玻璃棉按面积折算4m³', conv2[0].quantity, 4);
 
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
