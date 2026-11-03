@@ -57,6 +57,7 @@
         .tag-pending { background: #eee; color: #888; }
         .tag-info { background: #e0f2f1; color: #00695c; cursor: help; }
         .tag-market { background: #e8eaf6; color: #283593; cursor: help; }
+        .price-brand { display: inline-block; margin-left: 3px; padding: 0 5px; border-radius: 8px; background: #f1f8e9; color: #33691e; font-size: 11px; border: 1px solid #dcedc8; white-space: nowrap; }
         .tag-na { background: #eceff1; color: #607d8b; }
         .tag-infer { background: #e3f2fd; color: #1565c0; cursor: help; margin-left: 4px; }
         .legend { font-size: 12px; color: #888; margin: 6px 0 0; line-height: 1.8; }
@@ -67,7 +68,7 @@
     <div class="container">
         <div class="header">
             <h1>🌬️ 暖通专业智能组价系统</h1>
-            <p>天津2025清单计价规范 · Excel上传自动识别通风机/空调器/风机盘管/风口/风阀/消声器/静压箱/七类材质风管 · 同定额自动合并工程量 · 全部本地计算</p>
+            <p>天津2025清单计价规范 · Excel上传自动识别通风机/空调器/风机盘管/风口/风阀/消声器/静压箱/七类材质风管/冷水机组/热泵机组/冷却塔/各类管道 · 同定额自动合并工程量 · 全部本地计算</p>
         </div>
 
         <div class="content">
@@ -75,7 +76,7 @@
                 <h3>📋 使用说明</h3>
                 <ul>
                     <li><strong>输入端规则</strong>：上传暖通专业工程量清单 Excel（.xlsx/.xls），<strong>A列=序号</strong>、<strong>B列=项目名称（含型号/规格/风量）</strong>、<strong>C列=数量</strong>，首行可为表头；系统按项目名称<strong>自动识别并套用清单与定额</strong>。名称中须写全关键参数——风机/空调器/油烟净化写<strong>风量</strong>（如 <code>5000m³/h</code>、<code>L=5000</code>），风口/风阀/消声器/风管写<strong>尺寸</strong>（如 <code>800×400</code>、<code>φ400</code>），静压箱写<strong>长×宽×高</strong>（如 <code>1200×400×250</code>）；输出页<strong>「类型/选型」列</strong>可手动调整（如风机轴流/离心），结果支持<strong>广联达 / 建经科技</strong>两种格式导出。</li>
-                    <li><strong>定额依据</strong>：2020预算基价<strong>第九册（通风空调工程）</strong>——通风机 9-233~243（离心/轴流按风量分档）、组合式空调机组·新风机组 9-257~264、吊顶/落地/墙上式空调器 9-248/251/254、风机盘管 9-265~268、变风量末端 9-269、油烟净化 9-271~274、风阀 9-63~85、人防密闭阀 9-423~429、风口 9-86~154、消声器 9-190~204、静压箱 9-213~215、<strong>风管 9-1~9-11</strong>（镀锌薄钢板圆形 9-1~9-5 按直径、矩形 9-6~9-11 按长边长分档，单位 10m²）、<strong>净化风管 9-279~9-282</strong>、<strong>不锈钢板风管 9-293~9-297</strong>、<strong>塑料风管 9-322~9-330</strong>、<strong>玻璃钢风管 9-363~9-370</strong>、<strong>复合型酚醛风管 9-385~9-392</strong>、<strong>柔性软风管 9-39~9-43</strong>、<strong>通风管道场外运输 9-56</strong>。</li>
+                    <li><strong>定额依据</strong>：2020预算基价<strong>第九册（通风空调工程）</strong>——通风机 9-233~243（离心/轴流按风量分档）、组合式空调机组·新风机组 9-257~264、吊顶/落地/墙上式空调器 9-248/251/254、风机盘管 9-265~268、变风量末端 9-269、油烟净化 9-271~274、风阀 9-63~85、人防密闭阀 9-423~429、风口 9-86~154、消声器 9-190~204、静压箱 9-213~215、<strong>风管 9-1~9-11</strong>（镀锌薄钢板圆形 9-1~9-5 按直径、矩形 9-6~9-11 按长边长分档，单位 10m²）、<strong>净化风管 9-279~9-282</strong>、<strong>不锈钢板风管 9-293~9-297</strong>、<strong>塑料风管 9-322~9-330</strong>、<strong>玻璃钢风管 9-363~9-370</strong>、<strong>复合型酚醛风管 9-385~9-392</strong>、<strong>柔性软风管 9-39~9-43</strong>、<strong>通风管道场外运输 9-56</strong>；<strong>第一册（机械设备安装工程）</strong>——<strong>冷水机组 1-1130~1-1152</strong>（活塞/离心/螺杆，按制冷量分档）、<strong>热泵冷（热）水机组 1-1153~1-1164</strong>、<strong>玻璃钢冷却塔 1-1295~1-1303</strong>（按处理水量分档）；<strong>第八册（给排水采暖燃气工程）</strong>——管道 8-1~8-490 系列（室内外 × 介质 × 连接方式 × 管径）、管道消毒冲洗 8-490~、沟槽管件 8-220~。</li>
                     <li><strong>通风管道（本批新增）</strong>：名称含<strong>镀锌钢板 / 风道 / 通风管道</strong>等字眼即视为常规碳钢通风管道，清单统一 <code>030702001 碳钢通风管道</code>；<strong>矩形</strong>按<strong>长边长</strong>套 9-6~9-11（320/450/1000/1250/2000/4000mm以内），如 <code>矩形风道600*400</code>、<code>1000*400</code> 均套 <strong>9-8 镀锌钢板矩形风管 长边长1000mm以内</strong>；<strong>圆形</strong>按<strong>直径</strong>套 9-1~9-5（320/450/1000/1250/2000mm以内），清单编码不变。同一定额的多条风管<strong>自动合并工程量</strong>，项目名称替换为定额名称（如 600×400 200㎡ + 800×400 600㎡ + 1000×400 400㎡ → 合并为 9-8，工程量 1200㎡）。板厚随档位取 0.5/0.6/0.75/1.0/1.2mm，主材按镀锌钢板信息价计。</li>
                     <li><strong>各类材质风管（本批新增）</strong>：按名称关键词分流，<strong>分档口径各不相同</strong>，请对号入座——
                         <ul style="margin:6px 0 0 18px;">
@@ -88,6 +89,8 @@
                         </ul>
                         以上各类均<strong>按同一定额自动合并工程量、项目名称替换为定额名称</strong>；名称无尺寸时按该类<strong>最小档</strong>计列并标黄提示。
                     </li>
+                    <li><strong>制冷设备（本批新增）</strong>：清单 <code>030112001 冷水机组</code>，按名称分三类并按<strong>制冷量 kW</strong> 分档——<strong>活塞式</strong> 1-1130~1-1137（60/125/240/360/600/935/1200/1500kW）、<strong>离心式</strong> 1-1138~1-1145（350/600/900/1200/1500/1800/2300/3000kW）、<strong>螺杆式</strong> 1-1146~1-1152（240/350/600/900/1200/1800/2300kW）；名称未注类别按<strong>活塞式</strong>、未注制冷量按<strong>本类最小档</strong>计列，可在「类型/选型」列切换活塞/离心/螺杆。<code>030112003 热泵机组</code> 对应 1-1153~1-1164（10/20/35/60/120/180/240/300/350/480/600/700kW）；<code>030112006 冷却塔</code> 对应 1-1295~1-1303（处理水量 30/50/70/100/150/250/300/500/700m³/h）。设备价按<strong>国产中高档品牌询价</strong>，价格旁标注品牌。</li>
+                    <li><strong>水系统管道（本批新增）</strong>：暖通站管道部分的<strong>清单、定额、主材价计取原则与给排水站完全一致</strong>——清单 <code>031001001~031001008</code>（铸铁/镀锌/无缝/焊接/铜/不锈钢/复合/塑料），定额按<strong>第八册（给排水采暖燃气工程）</strong>分「室内/室外 × 介质 × 连接方式 × 管径」匹配；每条管道<strong>自动附加管道消毒冲洗 8-490~</strong>，<strong>沟槽（卡箍）连接</strong>另附加沟槽管件 8-220~（按6m定尺估算数量）。名称只写「空调水/冷冻水/冷却水/冷凝水/热水管道」未注材质时，按<strong>镀锌钢管</strong>处理并标黄提示。输出页「类型/选型」列给出<strong>室内/室外</strong>与<strong>连接方式</strong>两个下拉，可手动校正。</li>
                     <li><strong>通风管道场外运输</strong>：只要清单中出现任意风管，系统在末尾<strong>自动补一行</strong> <code>030702301 通风管道场外运输</code> ＋ 定额 <strong>9-56</strong>，工程量＝全部风管展开面积合计（柔性软风管按 π×直径×长度 折算），<strong>不计主材价</strong>；若原表已带该行会自动去重，不重复计列。</li>
                     <li><strong>价格依据</strong>：镀锌钢板风管、净化风管主材按<strong>天津市当月信息价</strong>（镀锌钢板除税价，按板厚档换算 元/㎡）；不锈钢板、塑料板按市场板价（元/kg × 密度 × 壁厚）换算，玻璃钢、酚醛复合、柔性软风管按成品市场价计入，同类风管单价保持一致；其余设备材料参考<strong>天津市当月信息价及合理市场价标准</strong>进行组价，单价均可在 <code>data/prices.js</code> 调整。</li>
                 </ul>
@@ -104,7 +107,7 @@
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📁</div>
                 <div class="upload-text">点击上传或拖拽工程量清单到此处</div>
-                <div class="upload-hint">支持 .xlsx、.xls 格式（通风机 / 空调器 / 风机盘管 / 油烟净化 / 风口 / 风阀 / 消声器 / 静压箱 / 人防密闭阀 / 碳钢·净化·不锈钢·塑料·玻璃钢·复合·柔性风管）<br>首次打开只加载精简解析库（约 250KB），上传 .xls 老格式时再按需补载完整库</div>
+                <div class="upload-hint">支持 .xlsx、.xls 格式（通风机 / 空调器 / 风机盘管 / 油烟净化 / 风口 / 风阀 / 消声器 / 静压箱 / 人防密闭阀 / 碳钢·净化·不锈钢·塑料·玻璃钢·复合·柔性风管 / 冷水机组·热泵机组·冷却塔 / 各类水管道）<br>首次打开只加载精简解析库（约 250KB），上传 .xls 老格式时再按需补载完整库</div>
                 <input type="file" id="excelFile" accept=".xlsx,.xls">
             </div>
 
@@ -114,7 +117,7 @@
                 <div class="summary-card"><div class="number" id="totalCount">0</div><div class="label">项目总数（条）</div></div>
                 <div class="summary-card teal2"><div class="number" id="catDev">0</div><div class="label">通风空调设备</div></div>
                 <div class="summary-card teal2"><div class="number" id="catVent">0</div><div class="label">风口风阀</div></div>
-                <div class="summary-card teal2"><div class="number" id="catDuct">0</div><div class="label">通风管道（含运输）</div></div>
+                <div class="summary-card teal2"><div class="number" id="catDuct">0</div><div class="label">风管·管道（含运输）</div></div>
                 <div class="summary-card teal2"><div class="number" id="catOther">0</div><div class="label">消声器·静压箱</div></div>
                 <div class="summary-card amber"><div class="number" id="pendingCount">0</div><div class="label">待询价</div></div>
                 <div class="summary-card"><div class="number" id="totalPrice">¥0</div><div class="label">主材费合计（元）</div></div>
@@ -127,7 +130,7 @@
 
             <div class="result-area" id="resultArea" style="display:none;">
                 <div class="result-header"><h2>📊 组价结果预览</h2></div>
-                <p class="legend">说明：<span class="tag tag-info">信息价</span>=按天津市当月信息价换算（悬停看换算过程）；<span class="tag tag-market">市场价</span>=国产中高档/合资品牌市场参考价（悬停看计算公式与品牌）；<span class="tag tag-pending">待询价</span>=暂无参考价需人工补；<span class="tag tag-infer">推</span>=定额编号区间内推算需核对基价表；风管分档口径：碳钢按长边长/直径、净化按周长、不锈钢按直径×壁厚、塑料/玻璃钢圆形按直径·矩形按周长、复合按长边长、柔性按直径；⚠️黄色行请人工核对（多为缺参数或需手选定额）。</p>
+                <p class="legend">说明：<span class="tag tag-info">信息价</span>=按天津市当月信息价换算（悬停看换算过程）；<span class="tag tag-market">市场价</span>=国产中高档/合资品牌市场参考价（悬停看计算公式与品牌）；<span class="tag tag-pending">待询价</span>=暂无参考价需人工补；<span class="tag tag-infer">推</span>=定额编号区间内推算需核对基价表；风管分档口径：碳钢按长边长/直径、净化按周长、不锈钢按直径×壁厚、塑料/玻璃钢圆形按直径·矩形按周长、复合按长边长、柔性按直径；⚠️黄色行请人工核对（多为缺参数或需手选定额）；市场价主材在价格旁以<strong>小标签标注参考品牌</strong>（2~3 家国产中高档品牌），信息价部分只标「信息价」。</p>
                 <div class="table-container">
                     <table id="resultTable">
                         <thead>
@@ -155,6 +158,7 @@
 
     <script src="js/xlsx.mini.min.js"></script>
     <script src="data/prices.js"></script>
+    <script src="js/pipes.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

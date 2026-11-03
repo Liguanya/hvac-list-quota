@@ -9,6 +9,9 @@
 
   var P = (typeof window !== 'undefined' && window.HVAC_PRICES) ? window.HVAC_PRICES
     : (typeof require !== 'undefined' ? require('../data/prices.js') : {});
+  // 管道模块：与给排水站同一套清单/定额/主材价口径（031001001~008 + 第八册）
+  var PIPE = (typeof window !== 'undefined' && window.HVAC_PIPE) ? window.HVAC_PIPE
+    : (typeof require !== 'undefined' ? require('./pipes.js') : null);
 
   // ============================================================
   // 清单编码（天津2025清单计价规范 附录D 通风空调工程）
@@ -36,7 +39,10 @@
     ductFrp: '030702006',   // 玻璃钢通风管道（9-363~9-370）
     ductComp: '030702007',  // 复合型风管（9-385~9-392）
     ductFlex: '030702008',  // 柔性软风管（9-39~9-43）
-    transport: '030702301'  // 通风管道场外运输（9-56）
+    transport: '030702301', // 通风管道场外运输（9-56）
+    chiller: '030112001',   // 冷水机组（第一册 1-1130~1-1152）
+    heatpump: '030112003',  // 热泵机组（1-1153~1-1164）
+    coolingTower: '030112006' // 冷却塔（1-1295~1-1303）
   };
   var LIST_NAME = {
     heater: '空气加热器、冷却器', dedust: '除尘设备', acu: '空调器', fcu: '风机盘管',
@@ -45,7 +51,8 @@
     plenum: '静压箱', renfang: '人防手动密闭阀', duct: '碳钢通风管道',
     ductClean: '碳钢通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
     ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
-    transport: '通风管道场外运输'
+    transport: '通风管道场外运输',
+    chiller: '冷水机组', heatpump: '热泵机组', coolingTower: '冷却塔'
   };
 
   // 未匹配清单/定额时统一套用的补充清单编码
@@ -59,7 +66,8 @@
     plenum: '静压箱', renfang: '人防密闭阀', duct: '碳钢通风管道',
     ductClean: '净化通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
     ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
-    transport: '通风管道场外运输', other: '其他（未匹配）'
+    transport: '通风管道场外运输',
+    chiller: '冷水机组', heatpump: '热泵机组', coolingTower: '冷却塔', other: '其他（未匹配）'
   };
 
   var CAT_WORK = {
@@ -85,8 +93,21 @@
     ductComp: '复合型风管制作（下料、开槽、涂胶、合缝、法兰）、安装、固定、严密性试验',
     ductFlex: '软风管就位、加垫、连接、找平找正、固定',
     transport: '通风管道装车、场外运输、卸车',
+    chiller: '设备开箱检验、基础放线、吊装就位、找平找正、地脚螺栓固定、单机试运转',
+    heatpump: '设备开箱检验、吊装就位、找平找正、固定、冷热水管道接口、单机试运转',
+    coolingTower: '设备开箱检验、塔体就位、找平找正、固定、填料及布水器安装、单机试运转',
     other: '待补充：请按实际做法填写工作内容'
   };
+
+  // 管道类（复用给排水站）清单编码/名称/工作内容并入本表，供导出与项目特征复用
+  if (PIPE) {
+    Object.keys(PIPE.LIST).forEach(function (k) {
+      LIST[k] = PIPE.LIST[k].code;
+      LIST_NAME[k] = PIPE.LIST[k].name;
+      CAT_LABEL[k] = PIPE.CAT_LABEL[k];
+      CAT_WORK[k] = PIPE.CAT_WORK[k];
+    });
+  }
 
   // ============================================================
   // 定额表（第九册 通风空调工程）
@@ -217,9 +238,58 @@
   function isDuctCat(c) { return !!DUCT_TITLE[c]; }
 
   // ============================================================
+  // 第一册 机械设备安装工程：制冷设备 / 冷却塔（2020 天津预算基价）
+  //   活塞式冷水机组 1-1130~1-1137：60/125/240/360/600/935/1200/1500 kW以内
+  //   离心式冷水机组 1-1138~1-1145：350/600/900/1200/1500/1800/2300/3000 kW以内
+  //   螺杆式冷水机组 1-1146~1-1152：240/350/600/900/1200/1800/2300 kW以内
+  //   热泵冷（热）水机组 1-1153~1-1164：10/20/35/60/120/180/240/300/350/480/600/700 kW以内
+  //   玻璃钢冷却塔 1-1295~1-1303：30/50/70/100/150/250/300/500/700 m³/h以内
+  // ============================================================
+  var CHILLER_TIERS = {
+    piston: [T(60, '1-1130', '60kW以内'), T(125, '1-1131', '125kW以内'), T(240, '1-1132', '240kW以内'),
+      T(360, '1-1133', '360kW以内'), T(600, '1-1134', '600kW以内'), T(935, '1-1135', '935kW以内'),
+      T(1200, '1-1136', '1200kW以内'), T(1500, '1-1137', '1500kW以内')],
+    centrifugal: [T(350, '1-1138', '350kW以内'), T(600, '1-1139', '600kW以内'), T(900, '1-1140', '900kW以内'),
+      T(1200, '1-1141', '1200kW以内'), T(1500, '1-1142', '1500kW以内'), T(1800, '1-1143', '1800kW以内'),
+      T(2300, '1-1144', '2300kW以内'), T(3000, '1-1145', '3000kW以内')],
+    screw: [T(240, '1-1146', '240kW以内'), T(350, '1-1147', '350kW以内'), T(600, '1-1148', '600kW以内'),
+      T(900, '1-1149', '900kW以内'), T(1200, '1-1150', '1200kW以内'), T(1800, '1-1151', '1800kW以内'),
+      T(2300, '1-1152', '2300kW以内')]
+  };
+  var CHILLER_TITLE = {
+    piston: '活塞式冷水机组 制冷量', centrifugal: '离心式冷水机组 制冷量', screw: '螺杆式冷水机组 制冷量'
+  };
+  var HEATPUMP_TIERS = [T(10, '1-1153', '10kW以内'), T(20, '1-1154', '20kW以内'), T(35, '1-1155', '35kW以内'),
+    T(60, '1-1156', '60kW以内'), T(120, '1-1157', '120kW以内'), T(180, '1-1158', '180kW以内'),
+    T(240, '1-1159', '240kW以内'), T(300, '1-1160', '300kW以内'), T(350, '1-1161', '350kW以内'),
+    T(480, '1-1162', '480kW以内'), T(600, '1-1163', '600kW以内'), T(700, '1-1164', '700kW以内')];
+  var TOWER_TIERS = [T(30, '1-1295', '30m³/h以内'), T(50, '1-1296', '50m³/h以内'), T(70, '1-1297', '70m³/h以内'),
+    T(100, '1-1298', '100m³/h以内'), T(150, '1-1299', '150m³/h以内'), T(250, '1-1300', '250m³/h以内'),
+    T(300, '1-1301', '300m³/h以内'), T(500, '1-1302', '500m³/h以内'), T(700, '1-1303', '700m³/h以内')];
+
+  function parseChillerType(name) {
+    var t = String(name || '');
+    if (/离心/.test(t)) return 'centrifugal';
+    if (/螺杆/.test(t)) return 'screw';
+    if (/活塞/.test(t)) return 'piston';
+    return null;
+  }
+  // 冷却塔处理水量 m³/h
+  function parseWaterFlow(name) {
+    var m = String(name || '').match(/(\d+(?:\.\d+)?)\s*(?:m3\/h|m³\/h|立方米\/小时|立方\/小时|t\/h|吨\/小时|吨\/h)/i);
+    if (m) return parseFloat(m[1]);
+    return null;
+  }
+
+  // ============================================================
   // 类型下拉选项（输出页面手动选择）
   // ============================================================
   var TYPE_OPTS = {
+    chiller: [
+      { v: 'piston', label: '活塞式冷水机组' },
+      { v: 'centrifugal', label: '离心式冷水机组' },
+      { v: 'screw', label: '螺杆式冷水机组' }
+    ],
     fan: [
       { v: 'axial', label: '轴流/斜流/混流式' },
       { v: 'centrifugal', label: '离心式' }
@@ -698,6 +768,13 @@
     // 名称只写材质（镀锌钢板/镀锌薄钢板）时，按常规碳钢通风管道处理；排除板材/型钢/法兰等非风管行
     if (/镀锌(?:薄)?钢板/.test(n) && !/支架|法兰|角钢|型钢|板材|卷|板厚|δ/.test(n)) return 'duct';
 
+    // 制冷设备（第一册）
+    if (/冷却塔/.test(n)) return 'coolingTower';
+    if (/冷水机组|冷水机(?!组)/.test(n)) return 'chiller';
+    if (/热泵|冷热水机组/.test(n)) return 'heatpump';
+    // 管道类（与给排水站同一口径），放在风管之后、设备之前
+    if (PIPE) { var pc = PIPE.classify(n); if (pc) return pc; }
+
     // 设备类
     if (/风机盘管|风盘|FCU/i.test(n)) return 'fcu';
     if (/油烟净化|油烟|油网/.test(n)) return 'fume';
@@ -737,6 +814,33 @@
       it.thkName = parseThk(name);         // 名称里显式写的壁厚/板厚
       it.ductAuto = !parseDim(name).length && !parseDim(name).diameter;
       syncDuct(it);
+    }
+    if (category === 'chiller') {
+      var ct = parseChillerType(name);
+      it.sub = ct || 'piston';
+      it.chillerAuto = !ct;
+      it.coolKw = parseCoolingKw(name);
+      it.brand = P.chiller.brands.map(function (b) { return b.name.replace(/（.*?）/g, ''); }).join('/');
+    }
+    if (category === 'heatpump') {
+      it.sub = 'hp';
+      it.coolKw = parseCoolingKw(name);
+      it.brand = P.heatpump.brands.map(function (b) { return b.name.replace(/（.*?）/g, ''); }).join('/');
+    }
+    if (category === 'coolingTower') {
+      it.sub = 'tower';
+      it.waterFlow = parseWaterFlow(name);
+      it.brand = P.coolingTower.brands.map(function (b) { return b.name.replace(/（.*?）/g, ''); }).join('/');
+    }
+    // 管道：整段交给管道模块解析（材质/管径/介质/部位/连接方式）
+    if (PIPE && PIPE.LIST[category]) {
+      var pi = PIPE.buildItem(name);
+      ['material', 'dn', 'medium', 'loc', 'isRain', 'mediumAmbiguous', 'locAmbiguous', 'joint', 'jointAuto',
+        'jointFromName', 'jointFallback', 'plasticKind', 'compositeKind', 'listCode', 'listName'].forEach(function (k) {
+          if (pi[k] !== undefined) it[k] = pi[k];
+        });
+      it.unit = 'm';
+      it.brand = PIPE.brandOf(it) || '';
     }
     if (category === 'fan') {
       var ft = parseFanType(name);
@@ -792,6 +896,43 @@
 
   function matchQuota(it) {
     var s = it.sub;
+
+    // 冷水机组：活塞/离心/螺杆三类，按制冷量分档；无制冷量取本类最小档
+    if (it.category === 'chiller') {
+      var ctiers = CHILLER_TIERS[it.sub] || CHILLER_TIERS.piston;
+      var ckw = it.coolKw;
+      var ci = tierIndex(ctiers, ckw);
+      var noKw = !(ckw > 0);
+      if (ci < 0) ci = 0;
+      return {
+        code: ctiers[ci].code, name: (CHILLER_TITLE[it.sub] || CHILLER_TITLE.piston) + ctiers[ci].label,
+        inferred: false, overRange: noKw ? false : overOf(ctiers, ckw), keepList: true, noKw: noKw
+      };
+    }
+    // 热泵冷（热）水机组
+    if (it.category === 'heatpump') {
+      var hkw = it.coolKw;
+      var hi = tierIndex(HEATPUMP_TIERS, hkw);
+      var noHkw = !(hkw > 0);
+      if (hi < 0) hi = 0;
+      return {
+        code: HEATPUMP_TIERS[hi].code, name: '热泵冷（热）水机组 制冷量' + HEATPUMP_TIERS[hi].label,
+        inferred: false, overRange: noHkw ? false : overOf(HEATPUMP_TIERS, hkw), keepList: true, noKw: noHkw
+      };
+    }
+    // 玻璃钢冷却塔：按处理水量分档
+    if (it.category === 'coolingTower') {
+      var tf = it.waterFlow;
+      var ti2 = tierIndex(TOWER_TIERS, tf);
+      var noFlow = !(tf > 0);
+      if (ti2 < 0) ti2 = 0;
+      return {
+        code: TOWER_TIERS[ti2].code, name: '玻璃钢冷却塔 设备处理水量' + TOWER_TIERS[ti2].label,
+        inferred: false, overRange: noFlow ? false : overOf(TOWER_TIERS, tf), keepList: true, noFlow: noFlow
+      };
+    }
+    // 管道：交给管道模块（第八册）
+    if (PIPE && PIPE.LIST[it.category]) return PIPE.matchQuota(it);
 
     if (it.category === 'fan') {
       if (it.isToiletFan) {
@@ -958,8 +1099,41 @@
     return table[table.length - 1];
   }
 
+  // 品牌短名：去掉括号内的规格说明，便于表格窄列显示（完整信息放 title）
+  function brandShort(v) {
+    return String(v || '').replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '').trim();
+  }
+
+  // 制冷设备/冷却塔：国产中高档品牌询价，单价 = 档位基准价 × 品牌系数，basis 列 3 个品牌参考价
+  function equipPrice(cfg, tiers, v, metricCn) {
+    if (!cfg || !tiers) return { price: null, source: 'pending', basis: '' };
+    var noParam = !(v > 0);
+    var row = null;
+    if (noParam) { row = tiers[0]; v = tiers[0].max; }
+    for (var i = 0; i < tiers.length; i++) if (v <= tiers[i].max) { row = tiers[i]; break; }
+    if (!row) row = tiers[tiers.length - 1];
+    var base = cfg.brands[0];
+    var price = Math.round(row.price * base.coef);
+    var list = cfg.brands.map(function (b) {
+      return b.name.replace(/（.*?）/g, '') + ' ¥' + String(Math.round(row.price * b.coef)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }).join(' / ');
+    return {
+      price: price, source: 'market', brand: base.name,
+      basis: '国产中高档品牌询价（' + metricCn + v + (noParam ? '，名称未注参数按最小档取定，请核对' : '') + '）：' + list + '；取 ' + base.name + ' ' + price + ' 元/台'
+    };
+  }
+
   function lookupPrice(it) {
     var s = it.sub;
+
+    if (it.category === 'chiller') return equipPrice(P.chiller, P.chiller[it.sub] || P.chiller.piston, it.coolKw, '制冷量kW');
+    if (it.category === 'heatpump') return equipPrice(P.heatpump, P.heatpump.tiers, it.coolKw, '制冷量kW');
+    if (it.category === 'coolingTower') return equipPrice(P.coolingTower, P.coolingTower.tiers, it.waterFlow, '处理水量m³/h');
+    if (PIPE && PIPE.LIST[it.category]) {
+      var pq = PIPE.lookupPrice(it);
+      if (pq) return pq;
+      return { price: null, source: 'pending', basis: '' };
+    }
 
     if (it.category === 'fan') {
       if (it.isToiletFan) {
@@ -1256,6 +1430,14 @@
         ? '排烟/消防风机默认按轴流式（9-239~243），如实际为离心式请在"类型/选型"列切换'
         : '名称未注明风机类型，暂按轴流/斜流/混流式（9-239~243），如为离心式请在"类型/选型"列切换');
     }
+    if (quota.noKw) w.push('名称未注制冷量（如 1200kW），已按本类最小档 ' + quota.code + ' 计列，请按实际制冷量核对');
+    if (quota.noFlow) w.push('名称未注处理水量（如 300m³/h），已按最小档 ' + quota.code + ' 计列，请按实际水量核对');
+    if (it.category === 'chiller' && it.chillerAuto) w.push('名称未注明活塞式/离心式/螺杆式，暂按活塞式（1-1130~1137）计列，可在"类型/选型"列切换');
+    if (quota.needDn) w.push('未识别公称直径，请在名称中注明（如 DN100 / De110）');
+    if (PIPE && PIPE.LIST[it.category]) {
+      var pw = PIPE.buildWarn(it, quota);
+      if (pw) w.push(pw);
+    }
     if (quota.noTier) {
       if (it.category === 'fan' || it.category === 'fume' || it.category === 'acu') w.push('未识别风量(m³/h)，请在名称中注明（如 5000m³/h）或手选定额');
       if (it.category === 'vent' || it.category === 'valve') w.push('未识别规格尺寸（如 800×400 或 φ400），请在名称中注明或手选定额');
@@ -1317,6 +1499,13 @@
     }
     // 人防密闭阀：只显示直径（周长无工程意义）
     if (it.category === 'renfang') return dimStr || '';
+    if (it.category === 'chiller') {
+      var ctn = { piston: '活塞式', centrifugal: '离心式', screw: '螺杆式' }[it.sub] || '';
+      return (it.coolKw ? '制冷量' + it.coolKw + 'kW ' : '') + ctn;
+    }
+    if (it.category === 'heatpump') return it.coolKw ? '制冷量' + it.coolKw + 'kW 热泵机组' : '热泵机组';
+    if (it.category === 'coolingTower') return it.waterFlow ? '处理水量' + it.waterFlow + 'm³/h' : '';
+    if (PIPE && PIPE.LIST[it.category]) return PIPE.specCell(it) || '管径待识别';
     // 风管类：合并行显示定额档规格；未合并显示实际尺寸 + 板厚/壁厚
     if (isDuctCat(it.category)) {
       if (it.mergedSpec) return it.mergedSpec;
@@ -1334,6 +1523,12 @@
   }
 
   function typeLabel(it) {
+    if (it.category === 'chiller') return { piston: '活塞式冷水机组', centrifugal: '离心式冷水机组', screw: '螺杆式冷水机组' }[it.sub] || '';
+    if (it.category === 'heatpump') return '热泵冷（热）水机组';
+    if (it.category === 'coolingTower') return '玻璃钢冷却塔';
+    if (PIPE && PIPE.LIST[it.category]) {
+      return (it.loc === 'out' ? '室外' : '室内') + ' ' + (PIPE.JOINT_CN2[it.joint] || PIPE.JOINT_CN[it.joint] || '');
+    }
     var opts = TYPE_OPTS[it.category];
     if (!opts) return '';
     for (var i = 0; i < opts.length; i++) if (opts[i].v === it.sub) return opts[i].label;
@@ -1342,20 +1537,39 @@
 
   function generateFeature(format, it) {
     var lines = [];
-    lines.push('1.名称：' + it.name);
-    var sp = specText(it);
-    if (sp) lines.push('2.规格型号：' + sp);
-    var tl = typeLabel(it);
-    if (tl) lines.push('3.类型：' + tl);
-    if (it.brand) lines.push('4.品牌参考：' + it.brand);
-    lines.push('5.其他：' + (CAT_WORK[it.category] || ''));
+    var push = function (label, val) {
+      if (val === null || val === undefined || val === '') return;
+      lines.push((lines.length + 1) + '.' + label + '：' + val);
+    };
+    if (PIPE && PIPE.LIST[it.category]) {
+      push('名称', it.name);
+      push('规格型号', PIPE.specCell(it) || '待识别');
+      // 管道特征按"部位/材质/连接形式/介质/试压冲洗"拆成独立条目
+      String(PIPE.featureText(it) || '').split('；').forEach(function (kv) {
+        var p2 = kv.split(':');
+        if (p2.length < 2 || !p2[0]) return;
+        var k = p2[0].trim(), v = p2.slice(1).join(':').trim();
+        if (k === '型号规格') return;                       // 已在"规格型号"列体现
+        if (k === '材质') v = CAT_LABEL[it.category] || v;   // 用清单材质全称
+        push(k, v);
+      });
+      push('品牌参考', it.brand);
+      push('其他', CAT_WORK[it.category] || '');
+      return lines.join('\n');
+    }
+    push('名称', it.name);
+    push('规格型号', specText(it));
+    push('类型', typeLabel(it));
+    push('品牌参考', it.brand);
+    push('其他', CAT_WORK[it.category] || '');
     return lines.join('\n');
   }
 
   // ============================================================
   // 主流程
   // ============================================================
-  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, ductClean: 1, ductSS: 1, ductPlastic: 1, ductFrp: 1, ductComp: 1, ductFlex: 1, transport: 1, other: 1 };
+  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, ductClean: 1, ductSS: 1, ductPlastic: 1, ductFrp: 1, ductComp: 1, ductFlex: 1, transport: 1, chiller: 1, heatpump: 1, coolingTower: 1, other: 1 };
+  if (PIPE) Object.keys(PIPE.LIST).forEach(function (k) { PRICED_CATS[k] = 1; });
 
   // 补充定额编号：补1、补2……（同一行始终复用同一编号，切换类型不重排）
   function suppInfo(it) {
@@ -1495,7 +1709,7 @@
       }
       it.unit = unitCell || ((it.category === 'vent' || it.category === 'valve' || it.category === 'silencer' ||
         it.category === 'plenum' || it.category === 'renfang') ? '个'
-        : (it.category === 'ductFlex' ? 'm' : (isDuctCat(it.category) ? 'm²' : '台')));
+        : ((it.category === 'ductFlex' || (PIPE && PIPE.LIST[it.category])) ? 'm' : (isDuctCat(it.category) ? 'm²' : '台')));
 
       var quota = matchQuota(it);
       quota = applySupp(it, quota);
@@ -1503,6 +1717,7 @@
       it.quotaName = quota.name;
       it.codeInferred = !!quota.inferred;
       it.supp = !!quota.supp;
+      if (PIPE && PIPE.LIST[it.category]) it.extras = PIPE.buildExtraQuotas(it, quota);
       it.warn = buildWarn(it, quota);
       if (it.qtyWarn) it.warn = (it.warn ? it.warn + '；' : '') + '工程量缺失，暂按1' + it.unit + '计请核对';
 
@@ -1511,6 +1726,7 @@
         it.price = info.price;
         it.priceSource = info.source;
         it.priceBasis = info.basis || '';
+        it.priceBrand = info.brand || '';
       } else {
         it.price = null;
         it.priceSource = PRICED_CATS[it.category] ? 'pending' : 'na';
@@ -1530,6 +1746,7 @@
     it.quotaCode = q.code;
     it.quotaName = q.name;
     it.codeInferred = !!q.inferred;
+    if (PIPE && PIPE.LIST[it.category]) { it.extras = PIPE.buildExtraQuotas(it, q); it.brand = PIPE.brandOf(it) || it.brand; }
     it.warn = buildWarn(it, q);
     if (it.qtyWarn) it.warn = (it.warn ? it.warn + '；' : '') + '工程量缺失，暂按1' + it.unit + '计请核对';
     if (isDuctCat(it.category) && it.mergedCount) {
@@ -1544,6 +1761,7 @@
     var info = lookupPrice(it);
     if (info && info.price !== null) {
       it.price = info.price; it.priceSource = info.source; it.priceBasis = info.basis || '';
+      it.priceBrand = info.brand || '';
     } else {
       it.price = null;
       it.priceSource = PRICED_CATS[it.category] ? 'pending' : 'na';
@@ -1560,7 +1778,15 @@
     if (item.price === null) return '<span class="tag tag-pending">待询价</span>';
     var tip = item.priceBasis ? ' title="' + String(item.priceBasis).replace(/"/g, '&quot;') + '"' : '';
     var isInfo = item.priceSource === 'info';
-    return '<span class="tag ' + (isInfo ? 'tag-info' : 'tag-market') + '" ' + tip + '>' + (isInfo ? '信息价' : '市场价') + '</span> <span ' + tip + '>¥' + item.price.toFixed(2) + '</span>';
+    var brand = String(item.priceBrand || item.brand || '').replace(/（[^）]*）/g, '');
+    var chips = brand ? brand.split('/').filter(function (x) { return x; }).slice(0, 3) : [];
+    var brandHtml = '';
+    if (!isInfo && chips.length) {
+      brandHtml = ' ' + chips.map(function (b) {
+        return '<span class="price-brand" title="' + esc(brand) + '">' + esc(b) + '</span>';
+      }).join('');
+    }
+    return '<span class="tag ' + (isInfo ? 'tag-info' : 'tag-market') + '" ' + tip + '>' + (isInfo ? '信息价' : '市场价') + '</span> <span ' + tip + '>¥' + item.price.toFixed(2) + '</span>' + brandHtml;
   }
   function inferTag(it) {
     return it.codeInferred ? '<span class="tag tag-infer" title="定额编号为区间内按风量/周长/直径就近推算，请对照第九册子目表核对">推</span>' : '';
@@ -1578,6 +1804,12 @@
   }
 
   function layCell(it) {
+    if (PIPE && PIPE.LIST[it.category]) {
+      var locHtml = opt('in', it.loc, '室内') + opt('out', it.loc, '室外');
+      var js = PIPE.jointsOf(it);
+      var jointHtml = js.map(function (j) { return opt(j, it.joint, PIPE.JOINT_CN2[j] || PIPE.JOINT_CN[j] || j); }).join('');
+      return '<div style="display:flex;flex-direction:column;gap:4px;">' + sel('ploc', it._i, locHtml) + sel('pjoint', it._i, jointHtml) + '</div>';
+    }
     var opts = TYPE_OPTS[it.category];
     if (!opts) return '<span class="lay-static">—</span>';
     var h = '';
@@ -1598,7 +1830,7 @@
         + '<td class="cell-name">' + esc(it.name) + '</td>'
         + '<td class="cell-type">' + layCell(it) + '</td>'
         + '<td class="cell-spec">' + esc(specText(it)) + '</td>'
-        + '<td class="cell-brand">' + esc(it.brand || '') + '</td>'
+        + '<td class="cell-brand" title="' + esc(it.brand || '') + '">' + esc(brandShort(it.brand)) + '</td>'
         + '<td class="cell-qcode">' + esc(it.quotaCode || '—') + inferTag(it) + '</td>'
         + '<td class="cell-qname">' + esc(it.quotaName || '待人工处理') + '</td>'
         + '<td class="cell-price">' + priceText(it) + '</td>'
@@ -1616,7 +1848,7 @@
     var n = data.length, dev = 0, ovo = 0, other = 0, duct = 0, pending = 0, total = 0;
     for (var i = 0; i < data.length; i++) {
       var d = data[i];
-      if (isDuctCat(d.category) || d.category === 'transport') duct++;
+      if (isDuctCat(d.category) || d.category === 'transport' || (PIPE && PIPE.LIST[d.category])) duct++;
       else if (d.category === 'vent' || d.category === 'valve' || d.category === 'renfang') ovo++;
       else if (d.category === 'silencer' || d.category === 'plenum') other++;
       else dev++;
@@ -1645,6 +1877,13 @@
       var act = s.getAttribute('data-act');
       var reprice = false;
       if (act === 'sub') { it.sub = s.value; reprice = true; }
+      if (act === 'ploc') {
+        it.loc = s.value;
+        var allow = PIPE.jointsOf(it);
+        if (allow.indexOf(it.joint) < 0) { it.jointFallback = it.joint; it.joint = PIPE.defaultJoint(it); }
+        reprice = true;
+      }
+      if (act === 'pjoint') { it.joint = s.value; it.jointFromName = true; it.jointFallback = null; reprice = true; }
       if (reprice) {
         recomputeQuota(it);
         recomputePrice(it);
@@ -1678,6 +1917,10 @@
       // 定额行
       rows.push(['', '', '', '', '', '', '', '',
         it.quotaCode || '', '定额', it.quotaName || '（待人工处理）', '', '', '', '']);
+      // 附加定额行（管道：消毒冲洗 8-490、沟槽管件 8-220）
+      (it.extras || []).forEach(function (x) {
+        rows.push(['', '', '', '', '', '', '', '', x.code, '定额', x.name, '', '', '', '']);
+      });
       // 子目下设备行（主材）；场外运输等不设主材的子目跳过
       if (it.priceSource !== 'none') {
         rows.push(['', '', '', '', '', '', '', '',
@@ -1700,6 +1943,9 @@
       var nm = it.category === 'transport' ? it.name : (it.name + '（' + it.categoryLabel + '）');
       rows.push([it.index, it.listCode, nm, it.features, it.unit, it.quantity,
         it.quotaCode || '', it.quotaName || '（待人工处理）', it.price === null ? '' : num2(it.price)]);
+      (it.extras || []).forEach(function (x) {
+        rows.push([it.index, it.listCode, nm, '', it.unit, it.quantity, x.code, x.name, '']);
+      });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 30 }, { wch: 46 }, { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 34 }, { wch: 12 }];
@@ -1739,7 +1985,7 @@
       exportData.forEach(function (x) { if (x.mergedCount) mergedCnt += x.mergedCount - 1; });
       bar.textContent = '成功解析 ' + exportData.length + ' 条' +
         (mergedCnt ? '（风管同定额已合并 ' + mergedCnt + ' 项）' : '') +
-        '（通风机/空调器/风机盘管/油烟净化/各类风管/风口/风阀/消声器/静压箱/人防密闭阀，风管类已自动计列场外运输）；风机请在"类型/选型"列确认轴流或离心；黄色行为需人工核对项';
+        '（通风机/空调器/风机盘管/油烟净化/各类风管/风口/风阀/消声器/静压箱/人防密闭阀/冷水机组/热泵机组/冷却塔/各类管道，风管类已自动计列场外运输，管道已自动计列消毒冲洗及沟槽管件）；风机请在"类型/选型"列确认轴流或离心；黄色行为需人工核对项';
     } else {
       area.style.display = 'none';
       btn.style.display = 'none';
@@ -1857,7 +2103,20 @@
         var it = exportData[i]; it.sub = v;
         recomputeQuota(it); recomputePrice(it); it.features = generateFeature('guanglianda', it);
         renderTable(exportData);
-      }
+      },
+      setPipe: function (i, loc, joint) {
+        var it = exportData[i];
+        if (loc) it.loc = loc;
+        if (joint) { it.joint = joint; it.jointFromName = true; it.jointFallback = null; }
+        if (PIPE && PIPE.LIST[it.category]) {
+          var allow = PIPE.jointsOf(it);
+          if (allow.indexOf(it.joint) < 0) it.joint = PIPE.defaultJoint(it);
+          it.brand = PIPE.brandOf(it) || it.brand;
+        }
+        recomputeQuota(it); recomputePrice(it); it.features = generateFeature('guanglianda', it);
+        renderTable(exportData);
+      },
+      PIPE: PIPE
     };
   }
 
@@ -1873,7 +2132,10 @@
       DUCT_SS_TIERS: DUCT_SS_TIERS, DUCT_PL_ROUND: DUCT_PL_ROUND, DUCT_PL_RECT: DUCT_PL_RECT,
       DUCT_FRP_ROUND: DUCT_FRP_ROUND, DUCT_FRP_RECT: DUCT_FRP_RECT, DUCT_COMP_ROUND: DUCT_COMP_ROUND,
       DUCT_COMP_RECT: DUCT_COMP_RECT, DUCT_FLEX_TIERS: DUCT_FLEX_TIERS, generateFeature: generateFeature,
-      buildWarn: buildWarn, exportGLD: exportGLD, exportJianjing: exportJianjing
+      buildWarn: buildWarn, exportGLD: exportGLD, exportJianjing: exportJianjing,
+      CHILLER_TIERS: CHILLER_TIERS, HEATPUMP_TIERS: HEATPUMP_TIERS, TOWER_TIERS: TOWER_TIERS,
+      parseChillerType: parseChillerType, parseWaterFlow: parseWaterFlow, equipPrice: equipPrice,
+      typeLabel: typeLabel, PIPE: PIPE
     };
   }
 })();

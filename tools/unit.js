@@ -507,5 +507,95 @@ ck('四列格式-单位个', L4[0].unit, '个');
 var L5 = A.parseRows([['1.70℃防火阀防烟防火阀-800*250', '个', 2]]);
 ck('名称前缀剥离', L5[0].name, '70℃防火阀防烟防火阀-800*250');
 
+console.log('\n== 冷水机组：030112001 + 1-1130~1-1152（活塞/离心/螺杆，按制冷量）==');
+ck('冷水机组清单', one('冷水机组 1200kW').list, '030112001');
+ck('活塞式60kW→1-1130', one('活塞式冷水机组 60kW').code, '1-1130');
+ck('活塞式1500kW→1-1137', one('活塞式冷水机组 1500kW').code, '1-1137');
+ck('活塞式中间档360kW→1-1133', one('活塞式冷水机组 360kW').code, '1-1133');
+ck('离心式350kW→1-1138', one('离心式冷水机组 350kW').code, '1-1138');
+ck('离心式1200kW→1-1141', one('离心式冷水机组 1200kW').code, '1-1141');
+ck('离心式3000kW→1-1145', one('离心式冷水机组 3000kW').code, '1-1145');
+ck('螺杆式240kW→1-1146', one('螺杆式冷水机组 240kW').code, '1-1146');
+ck('螺杆式2300kW→1-1152', one('螺杆式冷水机组 2300kW').code, '1-1152');
+ck('螺杆式中间600kW→1-1148', one('螺杆式冷水机组 600kW').code, '1-1148');
+ck('冷水机组未注类别按活塞', A.buildItem('冷水机组 800kW').sub, 'piston');
+ck('冷水机组未注类别标黄', A.buildItem('冷水机组 800kW').chillerAuto, true);
+ck('无制冷量→活塞最小档', one('冷水机组').code, '1-1130');
+ck('无制冷量标记', A.matchQuota(A.buildItem('冷水机组')).noKw, true);
+ck('定额名称含制冷量', one('离心式冷水机组 900kW').qname, '离心式冷水机组 制冷量900kW以内');
+ck('活塞60kW价42000', price('活塞式冷水机组 60kW'), 42000);
+ck('螺杆1200kW价680000', price('螺杆式冷水机组 1200kW'), 680000);
+ck('离心3000kW价1620000', price('离心式冷水机组 3000kW'), 1620000);
+ck('冷水机组品牌标注', A.buildItem('螺杆式冷水机组 1200kW').brand, '格力/美的/海尔');
+ck('冷水机组价格来源市场价', A.lookupPrice(A.buildItem('螺杆式冷水机组 1200kW')).source, 'market');
+ck('冷水机组基价含3品牌', /格力/.test(A.lookupPrice(A.buildItem('螺杆式冷水机组 1200kW')).basis) && /美的/.test(A.lookupPrice(A.buildItem('螺杆式冷水机组 1200kW')).basis), true);
+
+console.log('== 热泵机组：030112003 + 1-1153~1-1164 ==');
+ck('热泵清单', one('热泵机组 350kW').list, '030112003');
+ck('热泵10kW→1-1153', one('热泵机组 10kW').code, '1-1153');
+ck('热泵700kW→1-1164', one('热泵机组 700kW').code, '1-1164');
+ck('热泵350kW→1-1161', one('热泵机组 350kW').code, '1-1161');
+ck('冷热水机组识别热泵', A.classify('风冷热泵冷热水机组 480kW'), 'heatpump');
+ck('热泵无参数→1-1153', one('热泵机组').code, '1-1153');
+ck('热泵定额名称', one('热泵机组 300kW').qname, '热泵冷（热）水机组 制冷量300kW以内');
+ck('热泵350kW价295000', price('热泵机组 350kW'), 295000);
+ck('热泵品牌标注', A.buildItem('热泵机组 350kW').brand, '格力/美的/清华同方');
+
+console.log('== 冷却塔：030112006 + 1-1295~1-1303 ==');
+ck('冷却塔清单', one('玻璃钢冷却塔 300m3/h').list, '030112006');
+ck('冷却塔30→1-1295', one('冷却塔 30m3/h').code, '1-1295');
+ck('冷却塔700→1-1303', one('冷却塔 700m3/h').code, '1-1303');
+ck('冷却塔150→1-1299', one('玻璃钢冷却塔 150m3/h').code, '1-1299');
+ck('冷却塔无参数→1-1295', one('冷却塔').code, '1-1295');
+ck('冷却塔无参数标记', A.matchQuota(A.buildItem('冷却塔')).noFlow, true);
+ck('冷却塔定额名称', one('冷却塔 500m3/h').qname, '玻璃钢冷却塔 设备处理水量500m³/h以内');
+ck('冷却塔300价110000', price('冷却塔 300m3/h'), 110000);
+ck('冷却塔品牌标注', A.buildItem('冷却塔 300m3/h').brand, '良机/金日/华强');
+
+console.log('== 水系统管道：复用给排水站（031001001~008 + 第八册）==');
+ck('镀锌钢管清单', one('镀锌钢管 DN100').list, '031001002');
+ck('镀锌钢管定额', one('镀锌钢管 DN100').code, '8-181');
+ck('焊接钢管定额', one('焊接钢管 DN150').code, '8-202');
+ck('无缝钢管定额', one('无缝钢管 DN200').code, '8-203');
+ck('PPR管清单', one('PPR管 De25').list, '031001008');
+ck('PPR管定额', one('PPR管 De25').code, '8-411');
+ck('管道单位m', A.buildItem('镀锌钢管 DN100').unit, 'm');
+ck('空调水管道未注材质按镀锌', A.buildItem('空调水管道 DN80').category, 'galv');
+ck('冷凝水管按镀锌', A.buildItem('冷凝水管道 DN50').category, 'galv');
+ck('风管不被识别为管道', A.classify('镀锌钢板风管 1000*400'), 'duct');
+ck('不锈钢风道不被识别为管道', A.classify('不锈钢风道 φ500'), 'ductSS');
+ck('塑料风管不被识别为管道', A.classify('塑料风管 400*200'), 'ductPlastic');
+
+var pipeRows = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢管 DN100', 60], [2, '焊接钢管 DN150', 30]]);
+ck('管道解析条数', pipeRows.length, 2);
+ck('管道主材价', pipeRows[0].price, 52);
+ck('管道价格来源市场价', pipeRows[0].priceSource, 'market');
+ck('管道价格旁品牌', /天津利达/.test(pipeRows[0].priceBrand), true);
+ck('管道附加消毒冲洗', (pipeRows[0].extras || []).filter(function (x) { return x.role === 'flush'; }).length, 1);
+ck('消毒冲洗定额8-491', (pipeRows[0].extras || [])[0].code, '8-491');
+ck('管道特征含安装部位', /安装部位/.test(pipeRows[0].features), true);
+ck('管道无运输行', pipeRows.filter(function (x) { return x.category === 'transport'; }).length, 0);
+
+var grooveRow = A.parseRows([['序号', '项目名称', '数量'], [1, '焊接钢管 沟槽连接 DN150', 60]]);
+ck('沟槽连接识别', grooveRow[0].joint, 'groove');
+ck('沟槽附加管件', (grooveRow[0].extras || []).filter(function (x) { return x.role === 'fitting'; }).length, 1);
+ck('沟槽管件定额8-224', (grooveRow[0].extras || [])[0].code, '8-224');
+ck('沟槽管件数量按6m', (grooveRow[0].extras || [])[0].qty, 10);
+
+console.log('== 混合清单：设备 + 风管 + 管道 ==');
+var mix = A.parseRows([['序号', '项目名称', '数量'],
+  [1, '螺杆式冷水机组 制冷量1200kW', 2],
+  [2, '玻璃钢冷却塔 300m3/h', 2],
+  [3, '热泵机组 350kW', 1],
+  [4, '镀锌钢板矩形风管 1000*400', 200],
+  [5, '镀锌钢管 DN100', 80],
+  [6, 'PPR管 De32', 120]]);
+ck('混合条数（3设备+1风管+2管道+运输）', mix.length, 7);
+ck('混合含运输行', mix[mix.length - 1].category, 'transport');
+ck('运输量只算风管', mix[mix.length - 1].quantity, 200);
+ck('混合设备条数', mix.filter(function (x) { return x.category === 'chiller' || x.category === 'coolingTower' || x.category === 'heatpump'; }).length, 3);
+ck('混合管道条数', mix.filter(function (x) { return x.unit === 'm'; }).length, 2);
+ck('冷水机组主材合计', mix.filter(function (x) { return x.category === 'chiller'; })[0].quantity * mix.filter(function (x) { return x.category === 'chiller'; })[0].price, 1360000);
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
