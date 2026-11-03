@@ -201,7 +201,32 @@
     heater: { brand: '国产中高档', perVol: 1.0, fallback: 8000 },
     dedust: { brand: '国产中高档', perVol: 5.0, fallback: 15000 },
     vrf: { brand: '国产中高档', perHp: 3500, perKw: 900, fallback: 25000 },
-    plenum: { brand: '国产中高档', coef: 480, factor: 0.5 }
+    plenum: { brand: '国产中高档', coef: 480, factor: 0.5 },
+
+    /* ---------- 其他材质风管：合理市场价（含税，按展开面积元/㎡） ----------
+     * 口径：非镀锌钢板风管无天津市月度信息价，按市场参考价计入；
+     *      同种类风管（不分圆形/矩形）单价保持一致，仅随板厚档变化
+     * 依据：2026-11 华北/天津市场询价区间（1688/厂家报价 + 常规工程结算价）取中值
+     */
+    // 不锈钢板 304：市场价 15.5 元/kg（17.8 元/kg 为零售高报价，10.5 元/kg 为201材质低价），密度 7.93kg/㎡·mm
+    ductSS: { brand: '304不锈钢板（太钢/宝钢）', kgPerM2PerMm: 7.93, perKg: 15.5 },
+    // 硬聚氯乙烯板（PVC）：市场价 10 元/kg，密度 1.4kg/㎡·mm
+    ductPlastic: { brand: '硬聚氯乙烯板（PVC）', kgPerM2PerMm: 1.4, perKg: 10 },
+    // 玻璃钢成品风管 δ4mm以内：市场 60~100 元/㎡，取 65 元/㎡（含法兰、加固）
+    ductFrp: { brand: '有机玻璃钢风管（成品）', perM2: 65 },
+    // 酚醛复合板成品风管 板厚20mm：市场 19~30 元/㎡，取 28 元/㎡（含法兰、胶粘剂）
+    ductComp: { brand: '酚醛复合板风管（成品）', perM2: 28 },
+    // 柔性软风管：按直径分档，元/m（按中心线长度）
+    ductFlex: {
+      brand: '防排烟柔性软风管（硅玻复合）',
+      tiers: [
+        { max: 150, price: 12 },
+        { max: 250, price: 18 },
+        { max: 500, price: 30 },
+        { max: 710, price: 45 },
+        { max: 910, price: 60 }
+      ]
+    }
   };
 
   root.HVAC_PRICES = HVAC_PRICES;

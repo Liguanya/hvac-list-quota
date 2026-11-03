@@ -246,6 +246,9 @@ ck('混合清单条数', mix.length, 10);
 ck('混合清单无价格空缺', mix.filter(function (x) { return x.price === null; }).length, 0);
 ck('混合清单合计', +mix.reduce(function (a, x) { return a + (x.price || 0) * x.quantity; }, 0).toFixed(2), 118314);
 
+function onlyDucts(list) { return list.filter(function (x) { return A.isDuctCat(x.category); }); }
+function lastRow(list) { return list[list.length - 1]; }
+
 console.log('== 风管：清单030702001 + 定额9-1~9-11 按长边长/直径分档 ==');
 ck('风管类别', A.classify('矩形风道 600*400'), 'duct');
 ck('风道字眼', A.classify('通风管道 1000×400'), 'duct');
@@ -284,9 +287,10 @@ ck('超档标记', A.matchQuota(A.buildItem('矩形风道4500*1000')).overRange,
 // 无尺寸：清单仍为030702001，定额待手选
 var nosz = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢板风管', 10]]);
 ck('无尺寸清单保留', nosz[0].listCode, '030702001');
-ck('无尺寸定额空', nosz[0].quotaCode, '');
+ck('无尺寸取最小档', nosz[0].quotaCode, '9-6');
 ck('无尺寸不套补充清单', /030806801/.test(nosz[0].listCode), false);
 ck('无尺寸无价格', nosz[0].price, null);
+ck('无尺寸提示补规格', /未注风管尺寸/.test(nosz[0].warn), true);
 
 console.log('== 风管：主材价按天津市当月信息价（板厚档）==');
 ck('风管价格来源', A.lookupPrice(A.buildItem('矩形风道600*400')).source, 'info');
@@ -301,7 +305,9 @@ ck('价格依据含信息价', /信息价/.test(A.lookupPrice(A.buildItem('矩�
 console.log('== 风管：同定额工程量合并 ==');
 var mg = A.parseRows([['序号', '项目名称', '数量', '单位'],
   [1, '矩形风道600*400', 200, 'm2'], [2, '矩形风道800*400', 600, 'm2'], [3, '矩形风道1000*400', 400, 'm2']]);
-ck('三项合并为一行', mg.length, 1);
+ck('三项合并为一行', onlyDucts(mg).length, 1);
+ck('自动计列场外运输', mg[mg.length - 1].listCode, '030702301');
+ck('运输工程量=风管合计', mg[mg.length - 1].quantity, 1200);
 ck('合并后定额9-8', mg[0].quotaCode, '9-8');
 ck('合并后工程量1200', mg[0].quantity, 1200);
 ck('合并后名称=定额名称', mg[0].name, '镀锌钢板矩形风管 长边长1000mm以内');
@@ -312,11 +318,11 @@ ck('合并后规格', A.specText(mg[0]), '长边长1000mm以内 δ0.75mm');
 ck('合并后特征名称', /1\.名称：镀锌钢板矩形风管 长边长1000mm以内/.test(mg[0].features), true);
 var mg2 = A.parseRows([['序号', '项目名称', '数量'],
   [1, '矩形风道600*400', 200], [2, '矩形风道1200*500', 100], [3, '防火阀 800*400', 3]]);
-ck('不同定额不合并', mg2.length, 3);
-ck('未合并行序号连续', mg2.map(function (x) { return x.index; }).join(','), '1,2,3');
+ck('不同定额不合并', onlyDucts(mg2).length, 2);
+ck('未合并行序号连续', mg2.map(function (x) { return x.index; }).join(','), '1,2,3,4');
 var mg3 = A.parseRows([['序号', '项目名称', '数量'],
   [1, '圆形镀锌钢板风道φ800', 300], [2, '圆形风道 φ900', 150], [3, '圆形风道 φ300', 60]]);
-ck('圆形同档合并', mg3.length, 2);
+ck('圆形同档合并', onlyDucts(mg3).length, 2);
 ck('圆形合并量', mg3[0].quantity, 450);
 ck('圆形合并名称', mg3[0].name, '镀锌薄钢板圆形风管 直径1000mm以内');
 ck('圆形低档独立', mg3[1].quotaCode, '9-1');
@@ -329,6 +335,147 @@ mg[0].sub = 'round';
 A.recomputeQuota(mg[0]);
 ck('合并行切圆形重算', mg[0].quotaCode, '9-3');
 ck('合并行切圆形名称', mg[0].name, '镀锌薄钢板圆形风管 直径1000mm以内');
+
+console.log('== 净化风管：清单030702001 + 定额9-279~9-282 按周长分档 ==');
+ck('净化分类', A.classify('净化风道 800*200'), 'ductClean');
+ck('净化字眼+风道', A.classify('净化通风管道'), 'ductClean');
+ck('进口风道归净化', A.classify('进口镀锌钢板风道 1000*400'), 'ductClean');
+ck('净化清单030702001', A.buildItem('净化风道 800*200').listCode, '030702001');
+ck('净化周长2000→9-280', A.matchQuota(A.buildItem('净化风道 800*200')).code, '9-280');
+ck('净化周长1800→9-280', A.matchQuota(A.buildItem('净化风道 800*100')).code, '9-280');
+ck('净化周长800→9-279', A.matchQuota(A.buildItem('净化风道 300*100')).code, '9-279');
+ck('净化周长4000→9-281', A.matchQuota(A.buildItem('净化风道 1200*800')).code, '9-281');
+ck('净化超4000→9-282', A.matchQuota(A.buildItem('净化风道 1500*800')).code, '9-282');
+ck('净化定额名称', A.matchQuota(A.buildItem('净化风道 800*200')).name, '镀锌薄钢板矩形净化风管（咬口） 周长2000mm以内');
+ck('净化板厚0.75', A.buildItem('净化风道 800*200').thk, 0.75);
+ck('净化价=镀锌钢板信息价', A.lookupPrice(A.buildItem('净化风道 800*200')).price, 23.37);
+ck('净化价格来源信息价', A.lookupPrice(A.buildItem('净化风道 800*200')).source, 'info');
+ck('净化圆形按πD折周长', A.matchQuota(A.buildItem('圆形净化风道 φ600')).code, '9-280');
+ck('净化圆形φ700折周长2199→9-281', A.matchQuota(A.buildItem('圆形净化风道 φ700')).code, '9-281');
+var cl = A.parseRows([['序号', '项目名称', '数量'],
+  [1, '净化风道800*200', 200], [2, '净化风道800*100', 100], [3, '净化风道1500*800', 50]]);
+ck('净化同定额合并2项', onlyDucts(cl).length, 2);
+ck('净化合并工程量300', onlyDucts(cl)[0].quantity, 300);
+ck('净化合并名称=定额名称', onlyDucts(cl)[0].name, '镀锌薄钢板矩形净化风管（咬口） 周长2000mm以内');
+ck('净化合并规格', A.specText(onlyDucts(cl)[0]), '周长2000mm以内 δ0.75mm');
+ck('净化运输合计350', lastRow(cl).quantity, 350);
+
+console.log('== 不锈钢板风管：清单030702003 + 定额9-293~9-297 ==');
+ck('不锈钢分类', A.classify('不锈钢风道 1000*400'), 'ductSS');
+ck('不锈钢圆形分类', A.classify('不锈钢圆形风道 φ400'), 'ductSS');
+ck('不锈钢清单030702003', A.buildItem('不锈钢风道 1000*400').listCode, '030702003');
+ck('不锈钢未注壁厚→9-293', A.matchQuota(A.buildItem('不锈钢风道 1000*400')).code, '9-293');
+ck('不锈钢未注壁厚标记', A.matchQuota(A.buildItem('不锈钢风道 1000*400')).noThk, true);
+var ssW = A.parseRows([['序号', '项目名称', '数量'], [1, '不锈钢风道 1000*400', 10]]);
+ck('不锈钢未注壁厚提示', /按最小档 9-293/.test(ssW[0].warn), true);
+ck('不锈钢未注壁厚板厚取2mm', A.buildItem('不锈钢风道 1000*400').thk, 2);
+ck('不锈钢未注壁厚单价按2mm', A.lookupPrice(A.buildItem('不锈钢风道 1000*400')).price, 245.83);
+ck('风管单位m²', A.buildItem('净化风道800*200').unit, 'm²');
+ck('柔性单位m', A.buildItem('柔性软风管 φ200').unit, 'm');
+ck('不锈钢φ300壁厚2→9-294', A.matchQuota(A.buildItem('不锈钢风道 φ300 壁厚2mm')).code, '9-294');
+ck('不锈钢φ600δ3→9-296', A.matchQuota(A.buildItem('不锈钢风道 φ600 δ3')).code, '9-296');
+ck('不锈钢φ900→9-297', A.matchQuota(A.buildItem('不锈钢风道 φ900 壁厚3mm')).code, '9-297');
+ck('不锈钢定额名称', A.matchQuota(A.buildItem('不锈钢风道 φ300 壁厚2mm')).name, '不锈钢板圆形风管制作、安装（电焊） 直径×壁厚400mm以内×2');
+ck('不锈钢矩形按长边长套圆形', A.matchQuota(A.buildItem('不锈钢矩形风道 500*300 壁厚2mm')).code, '9-295');
+ck('不锈钢板厚2mm', A.buildItem('不锈钢风道 φ300 壁厚2mm').thk, 2);
+ck('不锈钢价=2×7.93×15.5', A.lookupPrice(A.buildItem('不锈钢风道 φ300 壁厚2mm')).price, 245.83);
+ck('不锈钢价格来源市场价', A.lookupPrice(A.buildItem('不锈钢风道 φ300 壁厚2mm')).source, 'market');
+var ss = A.parseRows([['序号', '项目名称', '数量'],
+  [1, '不锈钢风道 φ300 壁厚2mm', 100], [2, '不锈钢风道 φ350 壁厚2mm', 50], [3, '不锈钢风道 φ600 δ3', 30]]);
+ck('不锈钢同定额合并', onlyDucts(ss).length, 2);
+ck('不锈钢合并量150', onlyDucts(ss)[0].quantity, 150);
+ck('不锈钢合并名称', onlyDucts(ss)[0].name, '不锈钢板圆形风管制作、安装（电焊） 直径×壁厚400mm以内×2');
+
+console.log('== 塑料风管：清单030702005 + 定额9-322~9-330 ==');
+ck('塑料分类', A.classify('塑料风道 800*400'), 'ductPlastic');
+ck('PPR风道分类', A.classify('PPR风道 φ200'), 'ductPlastic');
+ck('塑料清单030702005', A.buildItem('塑料风道 800*400').listCode, '030702005');
+ck('塑料矩形周长2400→9-328', A.matchQuota(A.buildItem('塑料风道 800*400')).code, '9-328');
+ck('塑料矩形周长1200→9-326', A.matchQuota(A.buildItem('塑料风道 400*200')).code, '9-326');
+ck('塑料矩形周长1600→9-327', A.matchQuota(A.buildItem('塑料风道 500*300')).code, '9-327');
+ck('塑料矩形超6500→9-330', A.matchQuota(A.buildItem('塑料风道 1600*1700')).code, '9-330');
+ck('塑料圆形φ500→9-323', A.matchQuota(A.buildItem('塑料圆形风道 φ500')).code, '9-323');
+ck('塑料圆形φ200→9-322', A.matchQuota(A.buildItem('PPR风道 φ200')).code, '9-322');
+ck('塑料矩形定额名称', A.matchQuota(A.buildItem('塑料风道 800*400')).name, '塑料矩形风管制作、安装 周长×壁厚3200mm以内×5');
+ck('塑料圆形定额名称', A.matchQuota(A.buildItem('塑料圆形风道 φ500')).name, '塑料圆形风管制作、安装 直径×壁厚630mm以内×4');
+ck('塑料壁厚5', A.buildItem('塑料风道 800*400').thk, 5);
+ck('塑料价=5×1.4×10', A.lookupPrice(A.buildItem('塑料风道 800*400')).price, 70);
+ck('塑料圆形壁厚4价', A.lookupPrice(A.buildItem('塑料圆形风道 φ500')).price, 56);
+ck('塑料同种类同档同价', A.lookupPrice(A.buildItem('塑料风道 500*300')).price, A.lookupPrice(A.buildItem('塑料圆形风道 φ600')).price);
+
+console.log('== 玻璃钢风管：清单030702006 + 定额9-363~9-370 ==');
+ck('玻璃钢分类', A.classify('玻璃钢风道 1000*400'), 'ductFrp');
+ck('玻璃钢清单030702006', A.buildItem('玻璃钢风道 1000*400').listCode, '030702006');
+ck('玻璃钢矩形周长2800→9-369', A.matchQuota(A.buildItem('玻璃钢风道 1000*400')).code, '9-369');
+ck('玻璃钢矩形周长1000→9-368', A.matchQuota(A.buildItem('玻璃钢风道 300*200')).code, '9-368');
+ck('玻璃钢矩形周长800→9-367', A.matchQuota(A.buildItem('玻璃钢风道 200*200')).code, '9-367');
+ck('玻璃钢矩形超4000→9-370', A.matchQuota(A.buildItem('玻璃钢风道 1200*900')).code, '9-370');
+ck('玻璃钢圆形φ300→9-364', A.matchQuota(A.buildItem('玻璃钢圆形风道 φ300')).code, '9-364');
+ck('玻璃钢圆形φ1500→9-366', A.matchQuota(A.buildItem('玻璃钢圆形风道 φ1500')).code, '9-366');
+ck('玻璃钢定额名称', A.matchQuota(A.buildItem('玻璃钢风道 1000*400')).name, '玻璃钢矩形风管安装 周长4000mm以内');
+ck('玻璃钢圆形定额名称', A.matchQuota(A.buildItem('玻璃钢圆形风道 φ300')).name, '玻璃钢圆形风管安装 直径500mm以内');
+ck('玻璃钢价65', A.lookupPrice(A.buildItem('玻璃钢风道 1000*400')).price, 65);
+ck('玻璃钢圆矩同价', A.lookupPrice(A.buildItem('玻璃钢圆形风道 φ300')).price, 65);
+var frp = A.parseRows([['序号', '项目名称', '数量'],
+  [1, '玻璃钢风道 1000*400', 200], [2, '玻璃钢风道 1200*800', 100]]);
+ck('玻璃钢同定额合并', onlyDucts(frp).length, 1);
+ck('玻璃钢合并量300', onlyDucts(frp)[0].quantity, 300);
+
+console.log('== 复合型风管：清单030702007 + 定额9-385~9-392（长边长）==');
+ck('复合分类', A.classify('酚醛复合风道 1200*400'), 'ductComp');
+ck('复合风道分类', A.classify('复合通风管道 800*400'), 'ductComp');
+ck('复合清单030702007', A.buildItem('酚醛复合风道 1200*400').listCode, '030702007');
+ck('复合矩形长边1200→9-392', A.matchQuota(A.buildItem('酚醛复合风道 1200*400')).code, '9-392');
+ck('复合矩形长边500→9-390', A.matchQuota(A.buildItem('酚醛复合风道 500*300')).code, '9-390');
+ck('复合矩形长边250→9-389', A.matchQuota(A.buildItem('酚醛复合风道 250*200')).code, '9-389');
+ck('复合矩形长边800→9-391', A.matchQuota(A.buildItem('酚醛复合风道 800*400')).code, '9-391');
+ck('复合圆形φ800→9-387', A.matchQuota(A.buildItem('酚醛复合圆形风道 φ800')).code, '9-387');
+ck('复合圆形φ2500→9-388', A.matchQuota(A.buildItem('酚醛复合圆形风道 φ2500')).code, '9-388');
+ck('复合定额名称', A.matchQuota(A.buildItem('酚醛复合风道 1200*400')).name, '复合型酚醛风管制作、安装 法兰矩形风管 长边长1000mm以外');
+ck('复合按长边非周长', A.matchQuota(A.buildItem('酚醛复合风道 1200*400')).code === '9-392', true);
+ck('复合价28', A.lookupPrice(A.buildItem('酚醛复合风道 1200*400')).price, 28);
+var cp = A.parseRows([['序号', '项目名称', '数量'],
+  [1, '酚醛复合风道 1200*400', 100], [2, '酚醛复合风道 1500*300', 60], [3, '酚醛复合风道 800*400', 40]]);
+ck('复合同定额合并', onlyDucts(cp).length, 2);
+ck('复合合并量160', onlyDucts(cp)[0].quantity, 160);
+
+console.log('== 柔性软风管：清单030702008 + 定额9-39~9-43（单位m）==');
+ck('柔性分类', A.classify('柔性软风管 φ200'), 'ductFlex');
+ck('软管分类', A.classify('软风管 φ300'), 'ductFlex');
+ck('软连接分类', A.classify('帆布软连接 400*300'), 'ductFlex');
+ck('柔性清单030702008', A.buildItem('柔性软风管 φ200').listCode, '030702008');
+ck('柔性单位m', A.buildItem('柔性软风管 φ200').unit, 'm');
+ck('柔性φ200→9-40', A.matchQuota(A.buildItem('柔性软风管 φ200')).code, '9-40');
+ck('柔性φ120→9-39', A.matchQuota(A.buildItem('柔性软风管 φ120')).code, '9-39');
+ck('柔性φ1000→9-43', A.matchQuota(A.buildItem('柔性软风管 φ1000')).code, '9-43');
+ck('柔性定额名称', A.matchQuota(A.buildItem('柔性软风管 φ200')).name, '柔性软风管安装 无保温套管 直径250mm以内');
+ck('柔性价18元/m', A.lookupPrice(A.buildItem('柔性软风管 φ200')).price, 18);
+ck('柔性大直径价高', A.lookupPrice(A.buildItem('柔性软风管 φ1000')).price > 18, true);
+var fx = A.parseRows([['序号', '项目名称', '数量'], [1, '柔性软风管 φ200', 10], [2, '柔性软风管 φ250', 20]]);
+ck('柔性同档合并', onlyDucts(fx).length, 1);
+ck('柔性合并量30', onlyDucts(fx)[0].quantity, 30);
+ck('柔性运输折算面积', lastRow(fx).quantity, 21.99);
+
+console.log('== 通风管道场外运输：030702301 + 9-56 ==');
+var tr = A.parseRows([['序号', '项目名称', '数量'], [1, '矩形风道600*400', 200], [2, '矩形风道1000*400', 100]]);
+ck('运输行存在', lastRow(tr).category, 'transport');
+ck('运输清单编码', lastRow(tr).listCode, '030702301');
+ck('运输清单名称', lastRow(tr).listName, '通风管道场外运输');
+ck('运输定额9-56', lastRow(tr).quotaCode, '9-56');
+ck('运输工程量=风管合计', lastRow(tr).quantity, 300);
+ck('运输无主材价', lastRow(tr).price, null);
+ck('运输无主材标记', lastRow(tr).priceSource, 'none');
+ck('运输序号连续', lastRow(tr).index, '2');
+var tr2 = A.parseRows([['序号', '项目名称', '数量'], [1, '70℃防火阀 800*400', 3]]);
+ck('无风管不计运输', tr2.filter(function (x) { return x.category === 'transport'; }).length, 0);
+var tr3 = A.parseRows([['序号', '项目名称', '数量'],
+  [1, '矩形风道600*400', 100], [2, '净化风道800*200', 50], [3, '不锈钢风道 φ300 壁厚2mm', 20],
+  [4, '塑料风道 800*400', 30], [5, '玻璃钢风道 1000*400', 40], [6, '酚醛复合风道 1200*400', 25],
+  [7, '柔性软风管 φ200', 10], [8, '通风管道场外运输', 999]]);
+ck('多材质风管运输合计', lastRow(tr3).quantity, 271.28);
+ck('用户自带运输行不重复', tr3.filter(function (x) { return x.category === 'transport'; }).length, 1);
+ck('运输行提示合计口径', /全部风管展开面积合计271.28m²/.test(lastRow(tr3).warn), true);
+ck('运输行识别', A.classify('通风管道场外运输'), 'transport');
 
 console.log('== 列自动识别（兼容多种清单格式）==');
 var L1 = A.parseRows([['70℃防火阀防烟防火阀-800*250', '个', 1],

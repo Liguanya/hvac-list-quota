@@ -29,13 +29,23 @@
     silencer: '030703020',  // 消声器
     plenum: '030703021',    // 静压箱
     renfang: '030703023',   // 人防手动密闭阀
-    duct: '030702001'       // 碳钢通风管道（镀锌钢板矩形 9-6~9-11 / 圆形 9-1~9-5）
+    duct: '030702001',      // 碳钢通风管道（镀锌钢板矩形 9-6~9-11 / 圆形 9-1~9-5）
+    ductClean: '030702001', // 净化风管（按碳钢通风管道计列，定额 9-279~9-282）
+    ductSS: '030702003',    // 不锈钢板通风管道（9-293~9-297）
+    ductPlastic: '030702005', // 塑料通风管道（9-322~9-330）
+    ductFrp: '030702006',   // 玻璃钢通风管道（9-363~9-370）
+    ductComp: '030702007',  // 复合型风管（9-385~9-392）
+    ductFlex: '030702008',  // 柔性软风管（9-39~9-43）
+    transport: '030702301'  // 通风管道场外运输（9-56）
   };
   var LIST_NAME = {
     heater: '空气加热器、冷却器', dedust: '除尘设备', acu: '空调器', fcu: '风机盘管',
     dehum: '除湿机', filter: '过滤吸收器', fume: '油烟净化器', vav: '变风量末端',
     fan: '通风机', valve: '碳钢阀门', vent: '风口', silencer: '消声器',
-    plenum: '静压箱', renfang: '人防手动密闭阀', duct: '碳钢通风管道'
+    plenum: '静压箱', renfang: '人防手动密闭阀', duct: '碳钢通风管道',
+    ductClean: '碳钢通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
+    ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
+    transport: '通风管道场外运输'
   };
 
   // 未匹配清单/定额时统一套用的补充清单编码
@@ -46,7 +56,10 @@
     fan: '通风机', acu: '空调器', fcu: '风机盘管', fume: '油烟净化',
     heater: '空气加热/冷却器', dedust: '除尘设备', dehum: '除湿机', filter: '过滤吸收器',
     vav: '变风量末端', vent: '风口', valve: '风阀', silencer: '消声器',
-    plenum: '静压箱', renfang: '人防密闭阀', duct: '碳钢通风管道', other: '其他（未匹配）'
+    plenum: '静压箱', renfang: '人防密闭阀', duct: '碳钢通风管道',
+    ductClean: '净化通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
+    ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
+    transport: '通风管道场外运输', other: '其他（未匹配）'
   };
 
   var CAT_WORK = {
@@ -65,6 +78,13 @@
     plenum: '静压箱制作（成品）、安装、固定',
     renfang: '阀体安装、固定、密闭检查',
     duct: '风管制作（放样、下料、折方/卷圆、咬口、法兰）、安装、固定、严密性试验',
+    ductClean: '净化风管制作（放样、下料、折方、咬口、上法兰、口缝涂密封胶、内表面清洗）、安装、固定、严密性试验',
+    ductSS: '不锈钢板风管制作（放样、下料、卷圆、焊接、上法兰）、安装、固定、严密性试验',
+    ductPlastic: '塑料风管制作（放样、下料、坡口、焊接、上法兰）、安装、固定、严密性试验',
+    ductFrp: '玻璃钢风管成品安装、法兰连接、找平找正、固定、严密性试验',
+    ductComp: '复合型风管制作（下料、开槽、涂胶、合缝、法兰）、安装、固定、严密性试验',
+    ductFlex: '软风管就位、加垫、连接、找平找正、固定',
+    transport: '通风管道装车、场外运输、卸车',
     other: '待补充：请按实际做法填写工作内容'
   };
 
@@ -138,14 +158,63 @@
 
   // 碳钢（镀锌钢板）通风管道 9-1~9-11，单位 10m²
   // 矩形按"长边长"分档：320/450/1000/1250/2000/4000
-  var DUCT_RECT_TIERS = [T(320, '9-6', '320mm以内'), T(450, '9-7', '450mm以内'), T(1000, '9-8', '1000mm以内'),
-    T(1250, '9-9', '1250mm以内'), T(2000, '9-10', '2000mm以内'), T(4000, '9-11', '4000mm以内')];
+  var DUCT_RECT_TIERS = [T(320, '9-6', '长边长320mm以内'), T(450, '9-7', '长边长450mm以内'), T(1000, '9-8', '长边长1000mm以内'),
+    T(1250, '9-9', '长边长1250mm以内'), T(2000, '9-10', '长边长2000mm以内'), T(4000, '9-11', '长边长4000mm以内')];
   // 圆形按"直径"分档：320/450/1000/1250/2000
-  var DUCT_ROUND_TIERS = [T(320, '9-1', '320mm以内'), T(450, '9-2', '450mm以内'), T(1000, '9-3', '1000mm以内'),
-    T(1250, '9-4', '1250mm以内'), T(2000, '9-5', '2000mm以内')];
+  var DUCT_ROUND_TIERS = [T(320, '9-1', '直径320mm以内'), T(450, '9-2', '直径450mm以内'), T(1000, '9-3', '直径1000mm以内'),
+    T(1250, '9-4', '直径1250mm以内'), T(2000, '9-5', '直径2000mm以内')];
 
   // 定额档 → 镀锌钢板板厚（GB50243 常用板厚，随长边长/直径递增）
   var DUCT_PLATE_T = { '9-1': 0.5, '9-2': 0.6, '9-3': 0.75, '9-4': 1.0, '9-5': 1.0, '9-6': 0.5, '9-7': 0.6, '9-8': 0.75, '9-9': 1.0, '9-10': 1.0, '9-11': 1.2 };
+
+  // ---- 净化风管 9-279~9-282：按"周长"分档（圆形执行矩形子目，周长=πD）----
+  var DUCT_CLEAN_TIERS = [T(800, '9-279', '周长800mm以内'), T(2000, '9-280', '周长2000mm以内'),
+    T(4000, '9-281', '周长4000mm以内'), T(Infinity, '9-282', '周长4000mm以外')];
+  // 定额消耗量对应的优质镀锌钢板板厚：0.5/0.75/1.0/1.2
+  var DUCT_CLEAN_T = { '9-279': 0.5, '9-280': 0.75, '9-281': 1.0, '9-282': 1.2 };
+
+  // ---- 不锈钢板圆形风管（电焊）9-293~9-297：直径×壁厚分档 ----
+  var DUCT_SS_TIERS = [T(200, '9-293', '直径×壁厚200mm以内×2'), T(400, '9-294', '直径×壁厚400mm以内×2'),
+    T(560, '9-295', '直径×壁厚560mm以内×2'), T(700, '9-296', '直径×壁厚700mm以内×3'),
+    T(Infinity, '9-297', '直径×壁厚700mm以外×3')];
+  var DUCT_SS_THK = { '9-293': 2, '9-294': 2, '9-295': 2, '9-296': 3, '9-297': 3 };
+
+  // ---- 塑料风管 9-322~9-325 圆形（直径）/ 9-326~9-330 矩形（周长）----
+  var DUCT_PL_ROUND = [T(300, '9-322', '直径×壁厚300mm以内×3'), T(630, '9-323', '直径×壁厚630mm以内×4'),
+    T(1000, '9-324', '直径×壁厚1000mm以内×5'), T(2000, '9-325', '直径×壁厚2000mm以内×6')];
+  var DUCT_PL_RECT = [T(1300, '9-326', '周长×壁厚1300mm以内×3'), T(2000, '9-327', '周长×壁厚2000mm以内×4'),
+    T(3200, '9-328', '周长×壁厚3200mm以内×5'), T(4500, '9-329', '周长×壁厚4500mm以内×6'),
+    T(6500, '9-330', '周长×壁厚6500mm以内×8')];
+  var DUCT_PL_THK = { '9-322': 3, '9-323': 4, '9-324': 5, '9-325': 6, '9-326': 3, '9-327': 4, '9-328': 5, '9-329': 6, '9-330': 8 };
+
+  // ---- 玻璃钢风管 9-363~9-366 圆形（直径）/ 9-367~9-370 矩形（周长），δ=4mm以内 ----
+  var DUCT_FRP_ROUND = [T(200, '9-363', '直径200mm以内'), T(500, '9-364', '直径500mm以内'),
+    T(1120, '9-365', '直径1120mm以内'), T(Infinity, '9-366', '直径1120mm以外')];
+  var DUCT_FRP_RECT = [T(800, '9-367', '周长800mm以内'), T(2000, '9-368', '周长2000mm以内'),
+    T(4000, '9-369', '周长4000mm以内'), T(Infinity, '9-370', '周长4000mm以外')];
+
+  // ---- 复合型酚醛风管 9-385~9-388 圆形（直径）/ 9-389~9-392 矩形（长边长）----
+  var DUCT_COMP_ROUND = [T(300, '9-385', '直径300mm以内'), T(630, '9-386', '直径630mm以内'),
+    T(1000, '9-387', '直径1000mm以内'), T(2000, '9-388', '直径2000mm以内')];
+  var DUCT_COMP_RECT = [T(300, '9-389', '长边长300mm以内'), T(630, '9-390', '长边长630mm以内'),
+    T(1000, '9-391', '长边长1000mm以内'), T(Infinity, '9-392', '长边长1000mm以外')];
+
+  // ---- 柔性软风管 9-39~9-43：直径分档，单位 m（无保温套管）----
+  var DUCT_FLEX_TIERS = [T(150, '9-39', '直径150mm以内'), T(250, '9-40', '直径250mm以内'),
+    T(500, '9-41', '直径500mm以内'), T(710, '9-42', '直径710mm以内'), T(910, '9-43', '直径910mm以内')];
+
+  // 定额名称前缀（分档标签已含"长边长/直径/周长"口径，这里只补定额子目名称）
+  var DUCT_TITLE = {
+    duct: { rect: '镀锌钢板矩形风管 ', round: '镀锌薄钢板圆形风管 ' },
+    ductClean: { rect: '镀锌薄钢板矩形净化风管（咬口） ', round: '镀锌薄钢板矩形净化风管（咬口） ' },
+    ductSS: { rect: '不锈钢板圆形风管制作、安装（电焊） ', round: '不锈钢板圆形风管制作、安装（电焊） ' },
+    ductPlastic: { rect: '塑料矩形风管制作、安装 ', round: '塑料圆形风管制作、安装 ' },
+    ductFrp: { rect: '玻璃钢矩形风管安装 ', round: '玻璃钢圆形风管安装 ' },
+    ductComp: { rect: '复合型酚醛风管制作、安装 法兰矩形风管 ', round: '复合型酚醛风管制作、安装 法兰圆形风管 ' },
+    ductFlex: { rect: '柔性软风管安装 无保温套管 ', round: '柔性软风管安装 无保温套管 ' }
+  };
+
+  function isDuctCat(c) { return !!DUCT_TITLE[c]; }
 
   // ============================================================
   // 类型下拉选项（输出页面手动选择）
@@ -213,6 +282,29 @@
     duct: [
       { v: 'rect', label: '矩形风管' },
       { v: 'round', label: '圆形风管' }
+    ],
+    ductClean: [
+      { v: 'rect', label: '矩形净化风管' },
+      { v: 'round', label: '圆形净化风管' }
+    ],
+    ductSS: [
+      { v: 'round', label: '圆形（按直径）' },
+      { v: 'rect', label: '矩形（按长边长）' }
+    ],
+    ductPlastic: [
+      { v: 'rect', label: '矩形（按周长）' },
+      { v: 'round', label: '圆形（按直径）' }
+    ],
+    ductFrp: [
+      { v: 'rect', label: '矩形（按周长）' },
+      { v: 'round', label: '圆形（按直径）' }
+    ],
+    ductComp: [
+      { v: 'rect', label: '矩形（按长边长）' },
+      { v: 'round', label: '圆形（按直径）' }
+    ],
+    ductFlex: [
+      { v: 'round', label: '圆形软风管' }
     ]
   };
 
@@ -294,7 +386,10 @@
   }
 
   // ============================================================
-  // 风管（碳钢通风管道）辅助
+  // 风管辅助（碳钢/净化/不锈钢/塑料/玻璃钢/复合/柔性软风管）
+  // 分档口径：碳钢=长边长|直径；净化=周长；不锈钢=直径×壁厚；
+  //          塑料=圆形直径|矩形周长；玻璃钢=圆形直径|矩形周长；
+  //          复合=圆形直径|矩形长边长；柔性=直径
   // ============================================================
   function ductShapeOf(name) {
     if (/圆形|圆风管|圆管|圆型|[φΦϕ∅]/.test(name)) return 'round';
@@ -302,15 +397,35 @@
     return parseDim(name).diameter ? 'round' : 'rect';
   }
 
-  // 特征尺寸：矩形取长边长(mm)，圆形取直径(mm)
-  function ductSizeOf(it) {
+  // 名称中显式标注的壁厚/板厚（mm），没有则返回 0
+  function parseThk(name) {
+    var m = name.match(/(?:δ|壁厚|厚度|板厚)\s*[:：=]?\s*(\d+(?:\.\d+)?)/);
+    if (m) return parseFloat(m[1]);
+    m = name.match(/[×xX*]\s*(\d(?:\.\d)?)\s*(?:mm)?\s*$/);      // φ400×2 / 800*400 不算
+    if (m) return parseFloat(m[1]);
+    m = name.match(/(\d(?:\.\d)?)\s*mm\s*(?:厚|板)/);
+    if (m) return parseFloat(m[1]);
+    return 0;
+  }
+
+  // 定额分档用的特征值（mm）
+  function ductMetricOf(it) {
     var d = it.dim || {};
-    if (it.sub === 'round') {
-      if (d.diameter) return d.diameter;
-      return d.length ? Math.max(d.length, d.width || 0) : 0;
+    var L = d.length || 0, W = d.width || 0, D = d.diameter || 0;
+    var round = it.sub === 'round';
+    var long = Math.max(L, W);
+    var peri = (L && W) ? 2 * (L + W) : 0;
+    var dia = D || long;
+    switch (it.category) {
+      case 'ductFlex': return dia;
+      case 'duct': return round ? dia : long;
+      case 'ductSS': return dia;                                  // 矩形执行圆形子目，按长边长
+      case 'ductComp': return round ? dia : long;
+      case 'ductClean': return round ? (dia ? Math.round(Math.PI * dia) : 0) : peri;
+      case 'ductPlastic':
+      case 'ductFrp': return round ? dia : peri;
+      default: return long;
     }
-    if (d.diameter) return d.diameter;
-    return Math.max(d.length || 0, d.width || 0);
   }
 
   // 名称无标准尺寸写法时兜底：取 100~4000 范围内最大数字
@@ -329,27 +444,61 @@
     return pl[1] || pl[0];
   }
 
-  // 统一同步：形状 → 特征尺寸 → 定额档 → 板厚档
-  function syncDuct(it) {
-    if (!it || it.category !== 'duct') return;
-    if (it.sub !== 'round') it.sub = 'rect';
-    var sz = ductSizeOf(it);
-    if (!sz) sz = ductSizeFromName(it.name);
-    it.ductSize = sz;
-    var tiers = it.sub === 'round' ? DUCT_ROUND_TIERS : DUCT_RECT_TIERS;
-    var i = tierIndex(tiers, sz);
-    var code = i >= 0 ? tiers[i].code : '';
-    it.plate = plateOfT(DUCT_PLATE_T[code] || 0.75);
+  function ductTiersOf(it) {
+    var round = it.sub === 'round';
+    switch (it.category) {
+      case 'ductClean': return DUCT_CLEAN_TIERS;
+      case 'ductSS': return DUCT_SS_TIERS;
+      case 'ductPlastic': return round ? DUCT_PL_ROUND : DUCT_PL_RECT;
+      case 'ductFrp': return round ? DUCT_FRP_ROUND : DUCT_FRP_RECT;
+      case 'ductComp': return round ? DUCT_COMP_ROUND : DUCT_COMP_RECT;
+      case 'ductFlex': return DUCT_FLEX_TIERS;
+      default: return round ? DUCT_ROUND_TIERS : DUCT_RECT_TIERS;
+    }
   }
 
-  // 风管定额档标签（长边长/直径 + 板厚），合并行与项目特征共用
+  // 统一同步：形状 → 特征值 → 定额档 → 板厚/壁厚
+  function syncDuct(it) {
+    if (!it || !isDuctCat(it.category)) return;
+    if (it.category === 'ductFlex') it.sub = 'round';
+    else if (it.sub !== 'round') it.sub = 'rect';
+    var sz = ductMetricOf(it);
+    if (!sz) sz = ductSizeFromName(it.name);
+    it.ductSize = sz;
+    var tiers = ductTiersOf(it);
+    var i = tierIndex(tiers, sz);
+    // 不锈钢板风管：名称未注壁厚 → 统一按最小档 9-293，壁厚与单价同步取该档
+    if (it.category === 'ductSS' && !it.thkName) i = 0;
+    it.ductTierIdx = i;
+    it.ductTier = i >= 0 ? tiers[i] : null;
+    var code = i >= 0 ? tiers[i].code : '';
+    var thk = 0;
+    if (it.category === 'duct') thk = DUCT_PLATE_T[code] || 0.75;
+    else if (it.category === 'ductClean') thk = DUCT_CLEAN_T[code] || 0.75;
+    else if (it.category === 'ductSS') thk = DUCT_SS_THK[code] || 2;
+    else if (it.category === 'ductPlastic') thk = DUCT_PL_THK[code] || 3;
+    else if (it.category === 'ductFrp') thk = 4;
+    else if (it.category === 'ductComp') thk = 20;
+    it.thk = thk;
+    it.plate = (it.category === 'duct' || it.category === 'ductClean') ? plateOfT(thk || 0.75) : null;
+  }
+
+  // 风管定额档标签（含长边长/直径/周长口径），合并行与项目特征共用
   function ductTierLabel(it) {
-    if (!it.ductSize) return '';
-    var tiers = it.sub === 'round' ? DUCT_ROUND_TIERS : DUCT_RECT_TIERS;
+    var tiers = ductTiersOf(it);
     var i = tierIndex(tiers, it.ductSize);
-    if (i < 0) return '';
-    var head = it.sub === 'round' ? '直径' : '长边长';
-    return head + tiers[i].label;
+    return tiers[i < 0 ? 0 : i].label;
+  }
+
+  // 板厚/壁厚文本
+  function ductThkText(it) {
+    if (!it.thk) return '';
+    if (it.category === 'duct' || it.category === 'ductClean') return 'δ' + Number(it.thk).toFixed(2) + 'mm';
+    if (it.category === 'ductFrp') return 'δ4mm以内';
+    if (it.category === 'ductComp') return '板厚' + it.thk + 'mm';
+    if (it.category === 'ductSS') return it.thkName ? ('壁厚' + it.thk + 'mm') : ('壁厚未注（按' + it.thk + 'mm计）');
+    if (it.category === 'ductPlastic') return '壁厚' + it.thk + 'mm';
+    return '';
   }
 
   // 风管原始规格文本（用于合并说明）
@@ -368,10 +517,11 @@
     var seen = {}, out = [], mergedAny = false;
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
-      if (it.category !== 'duct' || !it.quotaCode) { out.push(it); continue; }
+      if (!isDuctCat(it.category) || !it.quotaCode) { out.push(it); continue; }
       var g = seen[it.quotaCode];
-      if (!g) { seen[it.quotaCode] = it; it.mergedFrom = []; out.push(it); continue; }
+      if (!g) { seen[it.quotaCode] = it; it.mergedFrom = []; it.ductArea = ductAreaOf(it); out.push(it); continue; }
       g.quantity = +(g.quantity + it.quantity).toFixed(2);
+      g.ductArea = +((g.ductArea || 0) + ductAreaOf(it)).toFixed(2);
       g.mergedFrom.push(it);
     }
     for (var k in seen) {
@@ -383,22 +533,61 @@
       m.mergedNames = names;
       delete m.mergedFrom;
       m.name = m.quotaName;                                  // 项目名称改为定额名称
-      m.mergedSpec = ductTierLabel(m) + (m.plate ? ' δ' + Number(m.plate.t).toFixed(2) + 'mm' : '');
-      // 尺寸归到定额档上限，切换矩形/圆形后仍能稳定命中同一档
-      var tiers = m.sub === 'round' ? DUCT_ROUND_TIERS : DUCT_RECT_TIERS;
-      var ti = tierIndex(tiers, m.ductSize);
-      var cap = ti >= 0 ? tiers[ti].max : m.ductSize;
-      m.ductSize = cap;
-      m.dim = m.sub === 'round'
-        ? { diameter: cap, length: 0, width: 0, height: 0 }
-        : { length: cap, width: 0, height: 0, diameter: 0 };
+      m.mergedSpec = ductTierLabel(m) + (ductThkText(m) ? ' ' + ductThkText(m) : '');
       m.features = generateFeature('guanglianda', m);
-      var note = '已合并' + m.mergedCount + '项相同定额（' + names.join('、') + '）工程量合计' + m.quantity + 'm²';
+      var u = m.unit === 'm' ? 'm' : 'm²';
+      var note = '已合并' + m.mergedCount + '项相同定额（' + names.join('、') + '）工程量合计' + m.quantity + u;
       m.warn = note + (m.warn ? '；' + m.warn : '');
       mergedAny = true;
     }
     if (mergedAny) for (var n = 0; n < out.length; n++) out[n].index = String(n + 1);   // 合并后序号连续
     return out;
+  }
+
+  // 风管展开面积（m²）：柔性软风管按 π×D×L 折算，其余本身即为 m²
+  function ductAreaOf(it) {
+    if (it.ductArea !== undefined && it.ductArea !== null) return it.ductArea;   // 合并时已累加
+    if (it.category === 'ductFlex') {
+      var d = (it.dim && it.dim.diameter) || it.ductSize || 0;
+      return +((Math.PI * d / 1000) * (it.quantity || 0)).toFixed(2);
+    }
+    return it.quantity || 0;
+  }
+
+  // 全部风管匹配完成后追加"通风管道场外运输"（030702301 + 9-56），工程量=全部风管面积合计
+  function withTransport(items) {
+    var area = 0, has = false, base = [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (it.category === 'transport') continue;
+      base.push(it);
+      if (isDuctCat(it.category)) { has = true; area += ductAreaOf(it); }
+    }
+    if (!has) return items;
+    area = +area.toFixed(2);
+    var row = {
+      index: String(base.length + 1),
+      name: '通风管道场外运输',
+      unit: 'm²',
+      quantity: area,
+      brand: '',
+      category: 'transport',
+      categoryLabel: CAT_LABEL.transport,
+      sub: '',
+      dim: { length: 0, width: 0, height: 0, diameter: 0 },
+      perimeter: 0,
+      listCode: LIST.transport,
+      listName: LIST_NAME.transport,
+      quotaCode: '9-56',
+      quotaName: '通风管道场外运输',
+      price: null,
+      priceSource: 'none',
+      priceBasis: '场外运输子目不设主材，仅计人工、材料（绑扎、垫木）与机械',
+      warn: '工程量按全部风管展开面积合计' + area + 'm² 计列，定额固定 9-56，不另计主材价'
+    };
+    row.features = '1.名称：通风管道场外运输\n2.工程量口径：全部风管展开面积合计\n3.其他：通风管道装车、场外运输、卸车（该子目不设主材）';
+    base.push(row);
+    return base;
   }
 
   // 风机类型
@@ -497,6 +686,14 @@
     if (/阀/.test(n)) return 'valve';
     // 风管类（风管机属空调器，需先排除）
     if (/风管机/.test(n)) return 'acu';
+    if (/场外运输|场外运/.test(n)) return 'transport';
+    // 各材质风管按"先特殊后通用"识别，避免都被碳钢风管吃掉
+    if (/软风管|软管|软连接|软接头/.test(n)) return 'ductFlex';
+    if (/不锈钢/.test(n) && /风道|风管|管道/.test(n)) return 'ductSS';
+    if (/玻璃钢/.test(n) && /风道|风管|管道/.test(n)) return 'ductFrp';
+    if (/(复合|酚醛|玻镁|无机)/.test(n) && /风道|风管|管道/.test(n)) return 'ductComp';
+    if (/(塑料|PPR|PVC|UPVC)/i.test(n) && /风道|风管|管道/.test(n)) return 'ductPlastic';
+    if (/(净化|进口)/.test(n) && /风道|风管|管道/.test(n)) return 'ductClean';
     if (/风管|风道|通风管道|送风管道|排风管道|排烟管道|送回风管/.test(n)) return 'duct';
     // 名称只写材质（镀锌钢板/镀锌薄钢板）时，按常规碳钢通风管道处理；排除板材/型钢/法兰等非风管行
     if (/镀锌(?:薄)?钢板/.test(n) && !/支架|法兰|角钢|型钢|板材|卷|板厚|δ/.test(n)) return 'duct';
@@ -533,10 +730,12 @@
       brand: ''
     };
 
-    if (category === 'duct') {
-      it.unit = 'm²';
-      it.brand = P.duct.brand;
-      it.sub = ductShapeOf(name);
+    if (isDuctCat(category)) {
+      it.unit = category === 'ductFlex' ? 'm' : 'm²';
+      it.brand = (P[category] && P[category].brand) || P.duct.brand;
+      it.sub = category === 'ductFlex' ? 'round' : ductShapeOf(name);
+      it.thkName = parseThk(name);         // 名称里显式写的壁厚/板厚
+      it.ductAuto = !parseDim(name).length && !parseDim(name).diameter;
       syncDuct(it);
     }
     if (category === 'fan') {
@@ -565,7 +764,7 @@
     if (category === 'renfang') { it.sub = /电动/.test(name) ? 'manualE' : 'manual'; it.brand = P.renfang.brand; }
 
     // 风管不按周长计价，周长字段置0（避免合并行输出误导性的"规格补充"）
-    it.perimeter = category === 'duct' ? 0 : calcPerimeter(it.dim);
+    it.perimeter = isDuctCat(category) ? 0 : calcPerimeter(it.dim);
     it.area = calcArea(it.dim);
     it.surface = calcSurface(it.dim);
     it.sectionArea = calcSection(it.dim);
@@ -725,21 +924,30 @@
       return a7;
     }
 
-    if (it.category === 'duct') {
-      syncDuct(it);
-      var dt = it.sub === 'round' ? DUCT_ROUND_TIERS : DUCT_RECT_TIERS;
-      var qi = tierIndex(dt, it.ductSize);
-      if (qi < 0) return { code: '', name: '', noTier: true, keepList: true };
-      return {
-        code: dt[qi].code,
-        name: (it.sub === 'round' ? '镀锌薄钢板圆形风管 直径' : '镀锌钢板矩形风管 长边长') + dt[qi].label,
-        inferred: false,
-        overRange: overOf(dt, it.ductSize),
-        keepList: true
-      };
-    }
+    if (isDuctCat(it.category)) return matchDuctQuota(it);
 
     return { code: '', name: '' };
+  }
+
+  // 各材质风管定额匹配（清单已由用户口径锁定，故统一 keepList）
+  function matchDuctQuota(it) {
+    syncDuct(it);
+    var tiers = ductTiersOf(it);
+    var cat = it.category;
+
+    var i = it.ductTierIdx;
+    var noSize = !(it.ductSize > 0);
+    if (i < 0) i = 0;                                   // 无尺寸/超档兜底：取该类最小档
+    var res = {
+      code: tiers[i].code,
+      name: DUCT_TITLE[cat][it.sub] + tiers[i].label,
+      inferred: false,
+      overRange: noSize ? false : overOf(tiers, it.ductSize),
+      keepList: true,
+      noSize: noSize
+    };
+    if (cat === 'ductSS' && !it.thkName) res.noThk = true;
+    return res;
   }
 
   // ============================================================
@@ -828,7 +1036,7 @@
     if (it.category === 'vent') return ventPrice(it);
     if (it.category === 'valve') return valvePrice(it);
     if (it.category === 'renfang') return renfangPrice(it);
-    if (it.category === 'duct') return ductPrice(it);
+    if (isDuctCat(it.category)) return ductPrice(it);
     if (it.category === 'silencer') {
       var per = it.perimeter / 1000;
       if (!per) return null;
@@ -952,22 +1160,83 @@
   }
 
   // 风管主材：镀锌钢板按板厚档，单价 = 板厚×7.85kg/㎡ × 天津市当月信息价（除税 元/kg）
+  // 各材质风管主材价：镀锌钢板（含净化）走天津市信息价，其余走合理市场价
   function ductPrice(it) {
-    var cfg = P.duct;
     syncDuct(it);
-    if (!it.ductSize) {
-      return { price: null, source: 'pending', basis: '未识别风管规格（如 1000×400 或 φ800），无法确定板厚档' };
+    var cat = it.category;
+    var tiers = ductTiersOf(it);
+    var ti = tierIndex(tiers, it.ductSize);
+    var label = tiers[ti < 0 ? 0 : ti].label;
+
+    if (cat === 'duct' || cat === 'ductClean') {
+      if (!it.ductSize) {
+        return { price: null, source: 'pending', basis: '未识别风管规格（如 1000×400 或 φ800），无法确定板厚档' };
+      }
+      var cfg = P.duct;
+      var pl = it.plate || plateOfT(it.thk || 0.75);
+      var price = +(pl.t * cfg.kgPerM2PerMm * pl.perKg).toFixed(2);
+      var specTxt = cat === 'ductClean'
+        ? ('周长' + it.ductSize + 'mm')
+        : (it.sub === 'round' ? ('直径' + it.ductSize + 'mm') : ('长边长' + it.ductSize + 'mm'));
+      return {
+        price: price, source: 'info',
+        basis: '天津市' + cfg.infoPeriod + '信息价（镀锌钢板 δ' + pl.t + 'mm 除税' + pl.info + '元/t）：' + specTxt +
+          ' → 板厚δ' + pl.t + 'mm，' + pl.t + '×' + cfg.kgPerM2PerMm + '=' + (pl.t * cfg.kgPerM2PerMm).toFixed(2) + 'kg/㎡ × ' +
+          pl.perKg + '元/kg = ' + price + '元/㎡' + (cat === 'ductClean' ? '（净化风管按优质镀锌钢板，同口径执行信息价）' : '')
+      };
     }
-    var pl = it.plate || plateOfT(0.75);
-    var price = +(pl.t * cfg.kgPerM2PerMm * pl.perKg).toFixed(2);
-    var spec = it.sub === 'round' ? ('直径' + it.ductSize + 'mm') : ('长边长' + it.ductSize + 'mm');
-    return {
-      price: price, source: 'info',
-      basis: '天津市' + cfg.infoPeriod + '信息价（镀锌钢板 δ' + pl.t + 'mm 除税' + pl.info + '元/t）：' + spec +
-        ' → 板厚δ' + pl.t + 'mm，' + pl.t + '×7.85=' + (pl.t * cfg.kgPerM2PerMm).toFixed(2) + 'kg/㎡ × ' +
-        pl.perKg + '元/kg = ' + price + '元/㎡'
-    };
+
+    if (cat === 'ductSS') {
+      var cs = P.ductSS;
+      var kgS = it.thk * cs.kgPerM2PerMm;
+      var pS = +(kgS * cs.perKg).toFixed(2);
+      return {
+        price: pS, source: 'market',
+        basis: '市场价（' + cs.brand + '）：' + label + ' → 板厚' + it.thk + 'mm，' + it.thk + '×' + cs.kgPerM2PerMm + '=' +
+          kgS.toFixed(2) + 'kg/㎡ × ' + cs.perKg + '元/kg = ' + pS + '元/㎡' + (it.thkName ? '' : '；名称未注壁厚，按最小档计')
+      };
+    }
+
+    if (cat === 'ductPlastic') {
+      var cp = P.ductPlastic;
+      var kgP = it.thk * cp.kgPerM2PerMm;
+      var pP = +(kgP * cp.perKg).toFixed(2);
+      return {
+        price: pP, source: 'market',
+        basis: '市场价（' + cp.brand + '）：' + label + ' → 板厚' + it.thk + 'mm，' + it.thk + '×' + cp.kgPerM2PerMm + '=' +
+          kgP.toFixed(2) + 'kg/㎡ × ' + cp.perKg + '元/kg = ' + pP + '元/㎡'
+      };
+    }
+
+    if (cat === 'ductFrp') {
+      var cf = P.ductFrp;
+      return {
+        price: cf.perM2, source: 'market',
+        basis: '市场价（' + cf.brand + '）：' + label + ' 玻璃钢成品风管 δ4mm以内 ' + cf.perM2 + '元/㎡（含法兰、加固，按展开面积）'
+      };
+    }
+
+    if (cat === 'ductComp') {
+      var cc = P.ductComp;
+      return {
+        price: cc.perM2, source: 'market',
+        basis: '市场价（' + cc.brand + '）：' + label + ' 酚醛复合板成品风管 板厚' + it.thk + 'mm ' + cc.perM2 + '元/㎡（含法兰、胶粘剂）'
+      };
+    }
+
+    if (cat === 'ductFlex') {
+      var cx = P.ductFlex, d = it.ductSize || 0, row = null;
+      for (var i = 0; i < cx.tiers.length; i++) if (d <= cx.tiers[i].max) { row = cx.tiers[i]; break; }
+      if (!row) row = cx.tiers[cx.tiers.length - 1];
+      return {
+        price: row.price, source: 'market',
+        basis: '市场价（' + cx.brand + '）：' + label + ' 柔性软风管 ' + row.price + '元/m（按中心线长度计）'
+      };
+    }
+
+    return { price: null, source: 'pending', basis: '' };
   }
+
 
   function renfangPrice(it) {
     var d = it.dim.diameter, cfg = P.renfang;
@@ -991,7 +1260,7 @@
       if (it.category === 'fan' || it.category === 'fume' || it.category === 'acu') w.push('未识别风量(m³/h)，请在名称中注明（如 5000m³/h）或手选定额');
       if (it.category === 'vent' || it.category === 'valve') w.push('未识别规格尺寸（如 800×400 或 φ400），请在名称中注明或手选定额');
       if (it.category === 'silencer') w.push('未识别消声器规格（长×宽），请核对名称');
-      if (it.category === 'duct') w.push('未识别风管规格（矩形写 1000×400，圆形写 φ800），已在"类型/选型"列给出矩形/圆形，请补尺寸或在名称中注明');
+      if (isDuctCat(it.category)) w.push('未识别风管规格（矩形写 1000×400，圆形写 φ800），已在"类型/选型"列给出形状，请补尺寸或在名称中注明');
       if (it.category === 'plenum') w.push('未识别静压箱尺寸（长×宽×高），请核对名称');
       if (it.category === 'renfang') w.push('未识别人防密闭阀直径（如 φ300），请核对名称');
     }
@@ -1006,6 +1275,14 @@
     if (it.category === 'vent' && it.sub === 'diffuserRd' && /旋流/.test(it.name)) w.push('旋流风口暂按圆形散流器子目，如有专用子目请手选');
     if (it.category === 'valve' && it.sub === 'butterfly' && !/蝶阀/.test(it.name)) w.push('未识别阀型，暂按蝶阀（9-63~67），请核对');
     if (it.category === 'silencer' && !it.perimeter) w.push('未识别消声器截面（长×宽），主材价按0计，请核对名称');
+    // 风管类专项提示
+    if (isDuctCat(it.category)) {
+      if (quota.noSize) w.push('名称未注风管尺寸，已按该类最小定额子目计列，请按实际规格核对');
+      if (quota.noThk) w.push('不锈钢风管名称未注壁厚，按最小档 ' + quota.code + ' 计列，请按实际直径与壁厚核对');
+      if (it.category === 'ductClean' && it.sub === 'round') w.push('圆形净化风管执行矩形净化风管子目，按周长（π×直径）分档');
+      if (it.category === 'ductSS' && it.sub === 'rect') w.push('不锈钢板矩形风管执行圆形风管子目，按长边长套用');
+      if (it.category === 'ductFlex') w.push('柔性软风管按中心线长度（m）计量，场外运输按 π×直径×长度 折算展开面积');
+    }
     return w.join('；');
   }
 
@@ -1040,11 +1317,12 @@
     }
     // 人防密闭阀：只显示直径（周长无工程意义）
     if (it.category === 'renfang') return dimStr || '';
-    // 风管：合并行显示定额档规格；未合并显示实际尺寸 + 板厚
-    if (it.category === 'duct') {
+    // 风管类：合并行显示定额档规格；未合并显示实际尺寸 + 板厚/壁厚
+    if (isDuctCat(it.category)) {
       if (it.mergedSpec) return it.mergedSpec;
+      var tt = ductThkText(it);
       var dl = ductTierLabel(it);
-      return (dimStr || dl || '未识别规格') + (it.plate ? ' δ' + Number(it.plate.t).toFixed(2) + 'mm' : '');
+      return (dimStr || dl || '未识别规格') + (tt ? ' ' + tt : '');
     }
     // 风口/风阀/消声器/静压箱
     if (it.category === 'plenum') {
@@ -1077,7 +1355,7 @@
   // ============================================================
   // 主流程
   // ============================================================
-  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, other: 1 };
+  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, ductClean: 1, ductSS: 1, ductPlastic: 1, ductFrp: 1, ductComp: 1, ductFlex: 1, transport: 1, other: 1 };
 
   // 补充定额编号：补1、补2……（同一行始终复用同一编号，切换类型不重排）
   function suppInfo(it) {
@@ -1217,7 +1495,7 @@
       }
       it.unit = unitCell || ((it.category === 'vent' || it.category === 'valve' || it.category === 'silencer' ||
         it.category === 'plenum' || it.category === 'renfang') ? '个'
-        : (it.category === 'duct' ? 'm²' : '台'));
+        : (it.category === 'ductFlex' ? 'm' : (isDuctCat(it.category) ? 'm²' : '台')));
 
       var quota = matchQuota(it);
       quota = applySupp(it, quota);
@@ -1242,7 +1520,7 @@
       it.features = generateFeature('guanglianda', it);
       results.push(it);
     }
-    return mergeDucts(results);
+    return withTransport(mergeDucts(results));
   }
 
   function recomputeQuota(it) {
@@ -1254,10 +1532,11 @@
     it.codeInferred = !!q.inferred;
     it.warn = buildWarn(it, q);
     if (it.qtyWarn) it.warn = (it.warn ? it.warn + '；' : '') + '工程量缺失，暂按1' + it.unit + '计请核对';
-    if (it.category === 'duct' && it.mergedCount) {
+    if (isDuctCat(it.category) && it.mergedCount) {
       it.name = it.quotaName;
-      it.mergedSpec = ductTierLabel(it) + (it.plate ? ' δ' + Number(it.plate.t).toFixed(2) + 'mm' : '');
-      it.warn = '已合并' + it.mergedCount + '项相同定额（' + (it.mergedNames || []).join('、') + '）工程量合计' + it.quantity + 'm²' +
+      var tt = ductThkText(it);
+      it.mergedSpec = ductTierLabel(it) + (tt ? ' ' + tt : '');
+      it.warn = '已合并' + it.mergedCount + '项相同定额（' + (it.mergedNames || []).join('、') + '）工程量合计' + it.quantity + (it.unit === 'm' ? 'm' : 'm²') +
         (it.warn ? '；' + it.warn : '');
     }
   }
@@ -1337,9 +1616,9 @@
     var n = data.length, dev = 0, ovo = 0, other = 0, duct = 0, pending = 0, total = 0;
     for (var i = 0; i < data.length; i++) {
       var d = data[i];
-      if (d.category === 'vent' || d.category === 'valve' || d.category === 'renfang') ovo++;
+      if (isDuctCat(d.category) || d.category === 'transport') duct++;
+      else if (d.category === 'vent' || d.category === 'valve' || d.category === 'renfang') ovo++;
       else if (d.category === 'silencer' || d.category === 'plenum') other++;
-      else if (d.category === 'duct') duct++;
       else dev++;
       if (PRICED_CATS[d.category] && d.price === null && d.priceSource !== 'none') pending++;
       if (d.price !== null && d.price !== undefined) total += d.price * d.quantity;
@@ -1390,7 +1669,7 @@
       var dimStr = '';
       if (d.diameter) dimStr = 'φ' + d.diameter;
       else if (d.length && d.width) dimStr = d.length + '×' + d.width + (d.height ? '×' + d.height : '');
-      if (it.category === 'duct' && it.mergedCount) dimStr = ductTierLabel(it);
+      if (isDuctCat(it.category) && it.mergedCount) dimStr = ductTierLabel(it);
       var sup = it.category === 'plenum' ? (it.sectionArea ? ('截面积' + it.sectionArea + '㎡') : '')
         : (it.perimeter ? ('周长' + it.perimeter + 'mm') : '');
       // 清单行
@@ -1399,10 +1678,12 @@
       // 定额行
       rows.push(['', '', '', '', '', '', '', '',
         it.quotaCode || '', '定额', it.quotaName || '（待人工处理）', '', '', '', '']);
-      // 子目下设备行（主材）
-      rows.push(['', '', '', '', '', '', '', '',
-        'Z00741', '子目下设备', it.brand || '主材', '主材：' + (specText(it) || it.name), it.unit, it.quantity,
-        it.price === null ? '' : num2(it.price)]);
+      // 子目下设备行（主材）；场外运输等不设主材的子目跳过
+      if (it.priceSource !== 'none') {
+        rows.push(['', '', '', '', '', '', '', '',
+          'Z00741', '子目下设备', it.brand || '主材', '主材：' + (specText(it) || it.name), it.unit, it.quantity,
+          it.price === null ? '' : num2(it.price)]);
+      }
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 10 },
@@ -1416,7 +1697,8 @@
     var rows = [];
     rows.push(['序号', '项目编码', '项目名称', '项目特征', '单位', '工程量', '定额编码', '定额名称', '主材单价']);
     data.forEach(function (it) {
-      rows.push([it.index, it.listCode, it.name + '（' + it.categoryLabel + '）', it.features, it.unit, it.quantity,
+      var nm = it.category === 'transport' ? it.name : (it.name + '（' + it.categoryLabel + '）');
+      rows.push([it.index, it.listCode, nm, it.features, it.unit, it.quantity,
         it.quotaCode || '', it.quotaName || '（待人工处理）', it.price === null ? '' : num2(it.price)]);
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
@@ -1457,7 +1739,7 @@
       exportData.forEach(function (x) { if (x.mergedCount) mergedCnt += x.mergedCount - 1; });
       bar.textContent = '成功解析 ' + exportData.length + ' 条' +
         (mergedCnt ? '（风管同定额已合并 ' + mergedCnt + ' 项）' : '') +
-        '（通风机/空调器/风机盘管/油烟净化/风管/风口/风阀/消声器/静压箱/人防密闭阀）；风机请在"类型/选型"列确认轴流或离心；黄色行为需人工核对项';
+        '（通风机/空调器/风机盘管/油烟净化/各类风管/风口/风阀/消声器/静压箱/人防密闭阀，风管类已自动计列场外运输）；风机请在"类型/选型"列确认轴流或离心；黄色行为需人工核对项';
     } else {
       area.style.display = 'none';
       btn.style.display = 'none';
@@ -1585,8 +1867,12 @@
       parseRows: parseRows, parseAirVolume: parseAirVolume, parseDim: parseDim, parseCoolingKw: parseCoolingKw,
       calcPerimeter: calcPerimeter, calcArea: calcArea, LIST: LIST, LIST_NAME: LIST_NAME,
       TYPE_OPTS: TYPE_OPTS, specText: specText, recomputeQuota: recomputeQuota, recomputePrice: recomputePrice,
-      CAT_LABEL: CAT_LABEL, mergeDucts: mergeDucts, ductTierLabel: ductTierLabel, ductShapeOf: ductShapeOf,
-      DUCT_RECT_TIERS: DUCT_RECT_TIERS, DUCT_ROUND_TIERS: DUCT_ROUND_TIERS, generateFeature: generateFeature,
+      CAT_LABEL: CAT_LABEL, mergeDucts: mergeDucts, withTransport: withTransport, ductTierLabel: ductTierLabel,
+      ductShapeOf: ductShapeOf, ductTiersOf: ductTiersOf, ductMetricOf: ductMetricOf, isDuctCat: isDuctCat,
+      DUCT_RECT_TIERS: DUCT_RECT_TIERS, DUCT_ROUND_TIERS: DUCT_ROUND_TIERS, DUCT_CLEAN_TIERS: DUCT_CLEAN_TIERS,
+      DUCT_SS_TIERS: DUCT_SS_TIERS, DUCT_PL_ROUND: DUCT_PL_ROUND, DUCT_PL_RECT: DUCT_PL_RECT,
+      DUCT_FRP_ROUND: DUCT_FRP_ROUND, DUCT_FRP_RECT: DUCT_FRP_RECT, DUCT_COMP_ROUND: DUCT_COMP_ROUND,
+      DUCT_COMP_RECT: DUCT_COMP_RECT, DUCT_FLEX_TIERS: DUCT_FLEX_TIERS, generateFeature: generateFeature,
       buildWarn: buildWarn, exportGLD: exportGLD, exportJianjing: exportJianjing
     };
   }
