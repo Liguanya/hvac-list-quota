@@ -455,6 +455,14 @@
     var r = interpPrice(grp.price, it.dn);
     if (!r) return null;
     var dl = dnLabelOf(it);
+    var isInfo = !!(grp.infoDns && grp.infoDns.indexOf(r.tier) >= 0);
+    if (isInfo) {
+      return {
+        price: r.price, source: 'info', brand: '',
+        basis: priceLabel(it) + ' ' + dl + it.dn + '：天津市工程造价信息（除税）' + r.price.toFixed(2) + '元/m' +
+          (r.exact ? '' : '；信息价无' + dl + it.dn + '档，按' + dl + r.tier + '档取定')
+      };
+    }
     var basis = priceLabel(it) + ' ' + dl + it.dn + '：' + grp.brand + '，' + r.price.toFixed(2) + '元/m（除税）' +
       (r.exact ? '' : '；价格库无' + dl + it.dn + '档，按' + dl + r.tier + '档就近取定') +
       (r.overflow ? '；已超常用最大档，请核对' : '');
@@ -463,7 +471,10 @@
   function brandOf(it) {
     var p = getPeriod();
     var grp = grpOf(p, it);
-    return grp ? grp.brand : '';
+    if (!grp) return '';
+    var r = interpPrice(grp.price, it.dn);
+    if (r && grp.infoDns && grp.infoDns.indexOf(r.tier) >= 0) return '';
+    return grp.brand;
   }
   function isPriced(it) { return !!(it && (it.category === 'castIron' || it.category === 'galv' || PIPE_GROUPS[it.category])); }
 

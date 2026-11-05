@@ -1453,7 +1453,7 @@
       return { price: P.insul.glass.price, source: 'market', brand: P.insul.glass.brand, basis: '市场价（' + P.insul.glass.brand + '）：带铝箔离心玻璃棉 ' + P.insul.glass.price + '元/m³（厚40mm）' };
     }
     if (PIPE && PIPE.LIST[it.category]) {
-      var pq = PIPE.lookupPrice(it);
+      var pq = PIPE.lookupPrice(it, currentPeriod());
       if (pq) return pq;
       return { price: null, source: 'pending', basis: '' };
     }
@@ -2340,6 +2340,27 @@
   // ============================================================
   var exportData = [];
 
+  function currentPeriod() {
+    var el = (typeof document !== 'undefined') && document.getElementById('periodSelect');
+    if (el && el.value) return el.value;
+    var arr = (typeof PIPE !== 'undefined' && PIPE.getPeriods) ? PIPE.getPeriods() : [];
+    return (arr[0] || {}).period;
+  }
+
+  function initPeriodSelect() {
+    var selEl = document.getElementById('periodSelect');
+    if (!selEl) return;
+    var arr = (typeof PIPE !== 'undefined' && PIPE.getPeriods) ? PIPE.getPeriods() : [];
+    selEl.innerHTML = '';
+    arr.forEach(function (p) {
+      var o = document.createElement('option');
+      o.value = p.period;
+      o.textContent = p.releaseLabel || p.period;
+      selEl.appendChild(o);
+    });
+    selEl.addEventListener('change', function () { refreshAll(); });
+  }
+
   function currentFormat() {
     return (document.querySelector('input[name="software"]:checked') || {}).value || 'guanglianda';
   }
@@ -2396,6 +2417,8 @@
       else exportGLD(exportData);
     });
     document.getElementById('resetBtn').addEventListener('click', function () { location.reload(); });
+
+    initPeriodSelect();
   });
 
   function setBar(cls, text) {
