@@ -1057,7 +1057,22 @@
     }
     if (category === 'fume') it.brand = P.fume.brand;
     if (category === 'vent') { it.sub = parseVentType(name); it.brand = P.vent.brand; }
-    if (category === 'valve') { it.sub = parseValveType(name); it.brand = P.valve.brand; }
+    if (category === 'valve') {
+      it.sub = parseValveType(name); it.brand = P.valve.brand;
+      // 圆形风道阀门：名称写成「对开多叶调节阀-300」即表示圆形风道、直径300mm，
+      // 按周长 πD 分档套定额（如 D300→周长942mm→9-76 周长2800mm以内）。
+      // 防火阀/排烟阀的 -70/-280 是熔断温度，不按直径处理。
+      var d0 = it.dim;
+      if (!d0.diameter && !d0.length && !d0.width) {
+        var mvd = name.match(/[-－—–_]\s*(\d{2,4})\s*(?:mm)?\s*$/i);
+        if (mvd) {
+          var dv = parseFloat(mvd[1]);
+          var isTemp = /防火|排烟/.test(name) && (dv === 70 || dv === 280);
+          var isVolt = /电动|电磁/.test(name) && [12, 24, 220, 380].indexOf(dv) >= 0;
+          if (dv >= 100 && !isTemp && !isVolt) { d0.diameter = dv; it.roundValve = true; }
+        }
+      }
+    }
     if (category === 'silencer') { it.sub = parseSilencerType(name); it.brand = P.silencer.brand; }
     if (category === 'plenum') it.brand = P.plenum.brand;
     if (category === 'renfang') { it.sub = /电动/.test(name) ? 'manualE' : 'manual'; it.brand = P.renfang.brand; }
@@ -1771,7 +1786,8 @@
     }
     if (quota.noTier) {
       if (it.category === 'fan' || it.category === 'fume' || it.category === 'acu') w.push('未识别风量(m³/h)，请在名称中注明（如 5000m³/h）或手选定额');
-      if (it.category === 'vent' || it.category === 'valve') w.push('未识别规格尺寸（如 800×400 或 φ400），请在名称中注明或手选定额');
+      if (it.category === 'vent') w.push('未识别规格尺寸（如 800×400 或 φ400），请在名称中注明或手选定额');
+      if (it.category === 'valve') w.push('未识别阀门规格：矩形写 800×400，圆形写 φ300 或「阀门-300」（-300 表示圆形风道直径300mm）');
       if (it.category === 'silencer') w.push('未识别消声器规格（长×宽），请核对名称');
       if (isDuctCat(it.category)) w.push('未识别风管规格（矩形写 1000×400，圆形写 φ800），已在"类型/选型"列给出形状，请补尺寸或在名称中注明');
       if (it.category === 'plenum') w.push('未识别静压箱尺寸（长×宽×高），请核对名称');
