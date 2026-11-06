@@ -40,6 +40,7 @@
     ductComp: '030702007',  // 复合型风管（9-385~9-392）
     ductFlex: '030702008',  // 柔性软风管（9-39~9-43）
     transport: '030702301', // 通风管道场外运输（9-56）
+    guideVane: '030702009', // 弯头导流叶片（9-35）
     chiller: '030112001',   // 冷水机组（第一册 1-1130~1-1152）
     heatpump: '030112003',  // 热泵机组（1-1153~1-1164）
     coolingTower: '030112006', // 冷却塔（1-1295~1-1303）
@@ -61,7 +62,7 @@
     plenum: '静压箱', renfang: '人防手动密闭阀', duct: '碳钢通风管道',
     ductClean: '碳钢通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
     ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
-    transport: '通风管道场外运输',
+    transport: '通风管道场外运输', guideVane: '弯头导流叶片',
     chiller: '冷水机组', heatpump: '热泵机组', coolingTower: '冷却塔',
     waterValve: '金属阀门', autoAir: '自动排气阀', tempValve: '散热器温控阀',
     floatValve: '法兰浮球阀', levelValve: '液压水位控制阀',
@@ -77,7 +78,7 @@
     fan: '通风机', acu: '空调器', fcu: '风机盘管', fume: '油烟净化',
     heater: '空气加热/冷却器', dedust: '除尘设备', dehum: '除湿机', filter: '过滤吸收器',
     vav: '变风量末端', vent: '风口', valve: '风阀', silencer: '消声器',
-    plenum: '静压箱', renfang: '人防密闭阀', duct: '碳钢通风管道',
+    plenum: '静压箱', renfang: '人防密闭阀', guideVane: '弯头导流叶片', duct: '碳钢通风管道',
     ductClean: '净化通风管道', ductSS: '不锈钢板通风管道', ductPlastic: '塑料通风管道',
     ductFrp: '玻璃钢通风管道', ductComp: '复合型风管', ductFlex: '柔性软风管',
     transport: '通风管道场外运输',
@@ -112,6 +113,7 @@
     ductComp: '复合型风管制作（下料、开槽、涂胶、合缝、法兰）、安装、固定、严密性试验',
     ductFlex: '软风管就位、加垫、连接、找平找正、固定',
     transport: '通风管道装车、场外运输、卸车',
+    guideVane: '导流叶片放样、下料、成型、安装、固定',
     chiller: '设备开箱检验、基础放线、吊装就位、找平找正、地脚螺栓固定、单机试运转',
     heatpump: '设备开箱检验、吊装就位、找平找正、固定、冷热水管道接口、单机试运转',
     coolingTower: '设备开箱检验、塔体就位、找平找正、固定、填料及布水器安装、单机试运转',
@@ -880,6 +882,8 @@
     // 静压箱、消声器优先
     if (/静压箱/.test(n)) return 'plenum';
     if (/消声器|消声弯头|消声静压/.test(n)) return 'silencer';
+    // 弯头导流叶片（030702009 + 9-35）：须先于风管判断
+    if (/导流叶片|导流片/.test(n) || (/导流/.test(n) && /弯头/.test(n))) return 'guideVane';
     // 人防密闭阀
     if (/人防/.test(n) && /密闭|阀门|阀/.test(n)) return 'renfang';
     // 绝热（031208002）：橡塑 / 离心玻璃棉，须先于风管与管道判断
@@ -1075,6 +1079,7 @@
     }
     if (category === 'silencer') { it.sub = parseSilencerType(name); it.brand = P.silencer.brand; }
     if (category === 'plenum') it.brand = P.plenum.brand;
+    if (category === 'guideVane') { it.sub = 'vane'; it.brand = P.guideVane.brand; }
     if (category === 'renfang') { it.sub = /电动/.test(name) ? 'manualE' : 'manual'; it.brand = P.renfang.brand; }
 
     // 风管不按周长计价，周长字段置0（避免合并行输出误导性的"规格补充"）
@@ -1195,6 +1200,10 @@
     }
     if (it.category === 'insulGlass') {
       return { code: '11-647', name: '带铝箔离心玻璃棉安装 通风管道 厚度40mm', inferred: false, keepList: true, unit: 'm³', factor: 1 };
+    }
+    // 弯头导流叶片（第九册 9-35，清单单位 m²）
+    if (it.category === 'guideVane') {
+      return { code: '9-35', name: '弯头导流叶片制作、安装', inferred: false, keepList: true, unit: 'm²' };
     }
     // 管道：交给管道模块（第八册）
     if (PIPE && PIPE.LIST[it.category]) return PIPE.matchQuota(it);
@@ -1467,6 +1476,13 @@
     if (it.category === 'insulGlass') {
       return { price: P.insul.glass.price, source: 'market', brand: P.insul.glass.brand, basis: '市场价（' + P.insul.glass.brand + '）：带铝箔离心玻璃棉 ' + P.insul.glass.price + '元/m³（厚40mm）' };
     }
+    if (it.category === 'guideVane') {
+      var gv = P.guideVane;
+      return {
+        price: gv.unit, source: 'market', brand: gv.brand,
+        basis: '市场价（' + gv.brand + '）：弯头导流叶片成品 ' + gv.unit + '元/㎡（含下料、咬口成型）；如按钢板材料价计为' + gv.mat + '元/㎡（δ1.0×7.85kg/㎡×4.20元/kg）'
+      };
+    }
     if (PIPE && PIPE.LIST[it.category]) {
       var pq = PIPE.lookupPrice(it, currentPeriod());
       if (pq) return pq;
@@ -1666,6 +1682,11 @@
       var t = tierOf(tbl);
       price = (G * t.coef + t.base) * cfg.factor + (t.add || 0);
       basis = '面积' + G + '㎡ × ' + t.coef + ' + ' + t.base + '，×' + cfg.factor + (t.add ? ' + 电动执行机构' + t.add : '');
+    }
+    // 电动风阀均配执行机构，小规格阀体价低，按 500 元/个兜底（执行机构 300~400 元 + 阀体）
+    if (/E$/.test(s) && price < 500) {
+      basis += '，电动风阀最低按500元/个计';
+      price = 500;
     }
     price = +price.toFixed(2);
     return { price: price, source: 'market', basis: '市场价（' + cfg.brand + '）：' + basis + ' = ' + price + '元/个' };
@@ -1874,6 +1895,9 @@
     if (it.category === 'plenum') {
       return (dimStr || '') + (it.sectionArea ? '（截面积' + it.sectionArea + '㎡）' : '');
     }
+    if (it.category === 'guideVane') {
+      return (dimStr || '') + (it.vanePer ? '（导流叶片展开面积约' + it.vanePer + '㎡）' : '');
+    }
     var extra = '';
     if (it.perimeter) extra = '（周长' + it.perimeter + 'mm）';
     return dimStr ? dimStr + extra : '';
@@ -1890,6 +1914,7 @@
     if (it.category === 'levelValve') return '法兰液压水位控制阀';
     if (it.category === 'flushValve') return '口部冲洗阀';
     if (it.category === 'solenoidValve') return it.dn ? (it.dn <= 50 ? '螺纹连接' : '法兰连接') : '';
+    if (it.category === 'guideVane') return '弯头导流叶片';
     if (it.category === 'bracket') return '支/吊架、基础型钢';
     if (it.category === 'insulRubber') return '橡塑保温壳安装';
     if (it.category === 'insulGlass') return '带铝箔离心玻璃棉安装';
@@ -1935,7 +1960,7 @@
   // ============================================================
   // 主流程
   // ============================================================
-  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, ductClean: 1, ductSS: 1, ductPlastic: 1, ductFrp: 1, ductComp: 1, ductFlex: 1, transport: 1, chiller: 1, heatpump: 1, coolingTower: 1,
+  var PRICED_CATS = { fan: 1, acu: 1, fcu: 1, fume: 1, heater: 1, dedust: 1, dehum: 1, filter: 1, vav: 1, vent: 1, valve: 1, silencer: 1, plenum: 1, renfang: 1, duct: 1, ductClean: 1, ductSS: 1, ductPlastic: 1, ductFrp: 1, ductComp: 1, ductFlex: 1, transport: 1, guideVane: 1, chiller: 1, heatpump: 1, coolingTower: 1,
     waterValve: 1, autoAir: 1, tempValve: 1, floatValve: 1, levelValve: 1, flushValve: 1, solenoidValve: 1,
     bracket: 1, insulRubber: 1, insulGlass: 1, other: 1 };
   if (PIPE) Object.keys(PIPE.LIST).forEach(function (k) { PRICED_CATS[k] = 1; });
@@ -2081,6 +2106,7 @@
       else if (it.category === 'flushValve') defUnit = '套';
       else if (it.category === 'bracket') defUnit = 'kg';
       else if (it.category === 'insulRubber' || it.category === 'insulGlass') defUnit = 'm³';
+      else if (it.category === 'guideVane') defUnit = 'm²';
       else if (it.category === 'ductFlex' || (PIPE && PIPE.LIST[it.category])) defUnit = 'm';
       else if (isDuctCat(it.category)) defUnit = 'm²';
       it.unit = unitCell || defUnit;
@@ -2099,6 +2125,20 @@
         }
       }
 
+      // 弯头导流叶片：清单 030702009 按展开面积(m²)计；上传单位为台/个/组时按风管截面积×2.5 折算
+      if (it.category === 'guideVane') {
+        it.vanePer = +((it.area || 0) * 2.5).toFixed(3);
+        if (it.unit !== 'm²') {
+          if (it.vanePer > 0) {
+            it.vaneConv = '按' + it.quantity + it.unit + ' × 展开面积约' + it.vanePer + '㎡ 折算';
+            it.quantity = +(it.quantity * it.vanePer).toFixed(2);
+          } else {
+            it.vaneConv = '未识别规格，未能折算展开面积';
+          }
+        }
+        it.unit = 'm²';
+      }
+
       var quota = matchQuota(it);
       quota = applySupp(it, quota);
       it.quotaCode = quota.code;
@@ -2108,6 +2148,11 @@
       if (PIPE && PIPE.LIST[it.category]) it.extras = PIPE.buildExtraQuotas(it, quota);
       it.warn = buildWarn(it, quota);
       if (it.qtyWarn) it.warn = (it.warn ? it.warn + '；' : '') + '工程量缺失，暂按1' + it.unit + '计请核对';
+      if (it.category === 'guideVane') {
+        var gw = it.vanePer > 0 ? '导流叶片展开面积按风管截面积×2.5估算，请按图核对'
+                                : '未识别风管规格，导流叶片工程量请按图填写（m²）';
+        it.warn = (it.warn ? it.warn + '；' : '') + gw;
+      }
 
       var info = lookupPrice(it);
       if (info && info.price !== null) {

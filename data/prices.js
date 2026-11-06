@@ -143,7 +143,7 @@
         { max: Infinity, coef: 1620, base: 610, add: 1200 }
       ],
       butterfly: { coef: 950, base: 80, add: 0 },
-      butterflyE: { coef: 950, base: 80, add: 200 },
+      butterflyE: { coef: 950, base: 80, add: 400 },
       check: [
         { max: 1.5, coef: 1230, base: 130 },
         { max: Infinity, coef: 1200, base: 130 }
@@ -161,6 +161,13 @@
       sealed: { coef: 1200, base: 120, add: 0, addE: 400 },
       cav: { times: 4 },              // 定风量阀 = 对开多叶调节阀价 × 4
       overpressure: { coef: 800, base: 80 }
+    },
+
+    /* 弯头导流叶片（030702009 + 9-35）：主材按成品导流叶片市场价 元/㎡ */
+    guideVane: {
+      brand: '国产镀锌钢板（δ1.0）',
+      unit: 180,        // 成品市场价（含下料、咬口成型）元/㎡
+      mat: 33           // 钢板材料价 δ1.0×7.85kg/㎡×4.20元/kg ≈ 33 元/㎡
     },
 
     /* 人防手动密闭阀：整类统一标准 = 直径(mm) × 单价，尺寸越大价越高，保证单调 */
