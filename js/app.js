@@ -1762,7 +1762,8 @@
       price += add; note = '（含电动执行机构+' + add + '元）';
     }
     price = +price.toFixed(2);
-    return { price: price, source: 'market', basis: '市场价（' + cfg.brand + '）：面积' + G + '㎡ × ' + coef + '元/㎡ + ' + base + '元，×' + cfg.factor + '系数 = ' + price + '元/个' + note };
+    // 天津市当月造价信息未列风口、散流器成品子目，按市场中准价（含参考品牌）计
+    return { price: price, source: 'market', basis: '信息价无风口成品子目，按市场价（' + cfg.brand + '）：面积' + G + '㎡ × ' + coef + '元/㎡ + ' + base + '元，×' + cfg.factor + '系数 = ' + price + '元/个' + note };
   }
 
   function valvePrice(it) {
