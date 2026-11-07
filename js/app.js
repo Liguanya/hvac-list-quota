@@ -103,7 +103,7 @@
     vent: '风口制作（成品）、安装、固定',
     valve: '阀体安装、固定、调试',
     silencer: '消声器安装、固定',
-    plenum: '静压箱制作（成品）、安装、固定',
+    plenum: '静压箱制作（成品）、安装、固定（消声静压箱含消声棉、穿孔板安装）',
     renfang: '阀体安装、固定、密闭检查',
     duct: '风管制作（放样、下料、折方/卷圆、咬口、法兰）、安装、固定、严密性试验',
     ductClean: '净化风管制作（放样、下料、折方、咬口、上法兰、口缝涂密封胶、内表面清洗）、安装、固定、严密性试验',
@@ -111,7 +111,7 @@
     ductPlastic: '塑料风管制作（放样、下料、坡口、焊接、上法兰）、安装、固定、严密性试验',
     ductFrp: '玻璃钢风管成品安装、法兰连接、找平找正、固定、严密性试验',
     ductComp: '复合型风管制作（下料、开槽、涂胶、合缝、法兰）、安装、固定、严密性试验',
-    ductFlex: '软风管就位、加垫、连接、找平找正、固定',
+    ductFlex: '软风管就位、加垫、连接、找平找正、固定（软管接口：下料、缝合/咬口、法兰连接）',
     transport: '通风管道装车、场外运输、卸车',
     guideVane: '导流叶片放样、下料、成型、安装、固定',
     chiller: '设备开箱检验、基础放线、吊装就位、找平找正、地脚螺栓固定、单机试运转',
@@ -174,6 +174,20 @@
     T(Infinity, '9-264', '100000m³/h以外')
   ];
 
+  // 吊顶式 / 落地式 / 墙上式空调器：按设备质量分档（单位 台）
+  var ACU_FORM_TITLE = {
+    ceiling: '吊顶式空调器安装 ',
+    floor: '落地式空调器安装 ',
+    wall: '墙上式空调器安装 '
+  };
+  var ACU_MASS_TIERS = {
+    ceiling: [T(0.15, '9-248', '质量0.15t以内'), T(0.2, '9-249', '质量0.2t以内'), T(0.4, '9-250', '质量0.4t以内')],
+    floor: [T(0.6, '9-251', '质量0.6t以内'), T(1.0, '9-252', '质量1.0t以内'), T(2.0, '9-253', '质量2.0t以内')],
+    wall: [T(0.1, '9-254', '质量0.1t以内'), T(0.2, '9-255', '质量0.2t以内'), T(0.3, '9-256', '质量0.3t以内')]
+  };
+  // 名称未注质量时按风量估算本体质量（t / 1000m³·h⁻¹）：吊顶式 0.015、落地式 0.025、墙上式 0.012
+  var ACU_MASS_PER_KVOL = { ceiling: 0.015, floor: 0.025, wall: 0.012 };
+
   var FUME_TIERS = [
     T(3000, '9-271', '3000m³/h以内'),
     T(10000, '9-272', '10000m³/h以内'),
@@ -191,7 +205,8 @@
   // 风口（周长分档，mm）
   var O_LOUVER = [T(900, '9-86', '900mm以内'), T(1280, '9-87', '1280mm以内'), T(1800, '9-88', '1800mm以内'), T(2500, '9-89', '2500mm以内'), T(3300, '9-90', '3300mm以内'), T(4800, '9-91', '4800mm以内'), T(6000, '9-92', '6000mm以内'), T(Infinity, '9-93', '6000mm以外')];
   var O_DIFF_SQ = [T(500, '9-102', '500mm以内'), T(1000, '9-103', '1000mm以内'), T(Infinity, '9-104', '1000mm以外')];
-  var O_DIFF_RD = [T(628, '9-105', '直径200mm以内'), T(1131, '9-106', '直径360mm以内'), T(Infinity, '9-107', '直径360mm以外')];
+  // 圆形、流线形散流器（含圆形风口、球形喷口）：按风口直径分档，分档值取周长 πD（200/360/500）
+  var O_DIFF_RD = [T(628, '9-105', '直径200mm以内'), T(1131, '9-106', '直径360mm以内'), T(1571, '9-107', '直径500mm以内')];
   var O_LOUVER_ADJ = [T(800, '9-122', '800mm以内'), T(1200, '9-123', '1200mm以内'), T(1800, '9-124', '1800mm以内'), T(2400, '9-125', '2400mm以内'), T(3200, '9-126', '3200mm以内'), T(Infinity, '9-127', '3200mm以外')];
   var O_ROUND_ADJ = [T(800, '9-128', '800mm以内'), T(1200, '9-129', '1200mm以内'), T(1800, '9-130', '1800mm以内'), T(2400, '9-131', '2400mm以内'), T(3200, '9-132', '3200mm以内'), T(4000, '9-133', '4000mm以内'), T(Infinity, '9-134', '4000mm以外')];
   var O_PLATE = [T(800, '9-140', '800mm以内'), T(1280, '9-141', '1280mm以内'), T(1600, '9-142', '1600mm以内'), T(2000, '9-143', '2000mm以内'), T(2800, '9-144', '2800mm以内'), T(3200, '9-145', '3200mm以内'), T(Infinity, '9-146', '3200mm以外')];
@@ -202,8 +217,10 @@
   var S_IMPED = [T(2200, '9-196', '2200mm以内'), T(3000, '9-197', '3000mm以内'), T(3800, '9-198', '3800mm以内'), T(4800, '9-199', '4800mm以内'), T(Infinity, '9-200', '4800mm以外')];
   var S_PIPE = [T(1280, '9-201', '1280mm以内'), T(2000, '9-202', '2000mm以内'), T(3000, '9-203', '3000mm以内'), T(Infinity, '9-204', '3000mm以外')];
 
-  // 静压箱（截面积分档，m²）
+  // 消声静压箱安装（截面积分档，m²）：截面积取名称前两维相乘，如 1200*1100*400 → 1.32m²
   var PLENUM_TIERS = [T(0.8, '9-213', '0.8m²以内'), T(3.5, '9-214', '3.5m²以内'), T(Infinity, '9-215', '3.5m²以外')];
+  // 普通静压箱（不分规格，单一子目）
+  var PLENUM_PLAIN = { code: '9-284', name: '静压箱安装' };
 
   // 人防手动密闭阀（直径分档，mm）
   var RF_TIERS = [T(200, '9-423', '200mm以内'), T(300, '9-424', '300mm以内'), T(400, '9-425', '400mm以内'), T(500, '9-426', '500mm以内'), T(600, '9-427', '600mm以内'), T(800, '9-428', '800mm以内'), T(Infinity, '9-429', '800mm以外')];
@@ -352,8 +369,13 @@
       { v: 'ceiling', label: '吊顶式空调器' },
       { v: 'floor', label: '落地式空调器' },
       { v: 'wall', label: '墙上式空调器' },
+      { v: 'section', label: '分段组装式空调器' },
       { v: 'split', label: '分体空调' },
-      { v: 'vrf', label: '多联机VRF' }
+      { v: 'vrf', label: '多联机VRF（按落地式分档）' }
+    ],
+    plenum: [
+      { v: 'plain', label: '静压箱' },
+      { v: 'silencer', label: '消声静压箱' }
     ],
     fcu: [
       { v: 'ceiling', label: '吊顶式' },
@@ -426,7 +448,8 @@
       { v: 'round', label: '圆形（按直径）' }
     ],
     ductFlex: [
-      { v: 'round', label: '圆形软风管' }
+      { v: 'round', label: '成品柔性软风管（按长度m）' },
+      { v: 'interface', label: '软管接口（帆布/三防复合布，按面积m²）' }
     ]
   };
 
@@ -582,7 +605,7 @@
   // 统一同步：形状 → 特征值 → 定额档 → 板厚/壁厚
   function syncDuct(it) {
     if (!it || !isDuctCat(it.category)) return;
-    if (it.category === 'ductFlex') it.sub = 'round';
+    if (it.category === 'ductFlex') it.sub = flexKindOf(it.name);
     else if (it.sub !== 'round') it.sub = 'rect';
     var sz = ductMetricOf(it);
     if (!sz) sz = ductSizeFromName(it.name);
@@ -639,7 +662,8 @@
     var seen = {}, out = [], mergedAny = false;
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
-      if (!isDuctCat(it.category) || !it.quotaCode) { out.push(it); continue; }
+      // 软管接口按材质（帆布/三防复合布/铝箔）分别计价，不合并
+      if (!isDuctCat(it.category) || !it.quotaCode || (it.category === 'ductFlex' && it.sub === 'interface')) { out.push(it); continue; }
       var g = seen[it.quotaCode];
       if (!g) { seen[it.quotaCode] = it; it.mergedFrom = []; it.ductArea = ductAreaOf(it); out.push(it); continue; }
       g.quantity = +(g.quantity + it.quantity).toFixed(2);
@@ -670,6 +694,8 @@
   function ductAreaOf(it) {
     if (it.ductArea !== undefined && it.ductArea !== null) return it.ductArea;   // 合并时已累加
     if (it.category === 'ductFlex') {
+      // 软管接口工程量已是展开面积（m²），直接参与运输面积合计
+      if (it.sub === 'interface') return it.quantity || 0;
       var d = (it.dim && it.dim.diameter) || it.ductSize || 0;
       return +((Math.PI * d / 1000) * (it.quantity || 0)).toFixed(2);
     }
@@ -768,16 +794,41 @@
     return null;
   }
 
-  // 空调器形式
+  // 空调器形式（定额按安装方式 + 设备质量分档）
   function parseAcuForm(name) {
-    if (/多联|VRF|室外机|室内机/.test(name)) return 'vrf';
+    if (/分段组装/.test(name)) return 'section';
     if (/组合式|空调机组|恒温恒湿|精密空调/.test(name)) return 'unit';
-    if (/新风/.test(name)) return 'pau';
+    if (/新风机组|新风处理|新风/.test(name) && !/室内机|室外机|多联|VRF/.test(name)) return 'pau';
+    // 多联机 / 室内机 / 室外机：按安装方式走吊顶、落地、墙上分档
+    if (/多联|VRF|室内机|室外机/.test(name)) {
+      if (/墙上|壁挂|壁装/.test(name)) return 'wall';
+      if (/落地|柜式/.test(name)) return 'floor';
+      if (/吊顶|嵌入式|卡式|天井/.test(name)) return 'ceiling';
+      return /室外机/.test(name) ? 'floor' : 'ceiling';
+    }
     if (/吊顶/.test(name)) return 'ceiling';
     if (/落地|柜式/.test(name)) return 'floor';
     if (/墙上|壁挂|壁装/.test(name)) return 'wall';
-    if (/分体|空气幕/.test(name)) return 'split';
+    if (/分体/.test(name)) return 'split';
+    if (/空气幕/.test(name)) return 'split';
     return null;
+  }
+
+  // 空调器本体质量（t）：名称优先（0.3t / 300kg），否则按风量估算
+  function parseAcuMass(name) {
+    var s2 = String(name || '');
+    var m = s2.match(/(\d+(?:\.\d+)?)\s*(?:t|T|吨)(?![a-zA-Z])/);
+    if (m) return parseFloat(m[1]);
+    m = s2.match(/(\d+(?:\.\d+)?)\s*(?:kg|KG|Kg|公斤)(?![a-zA-Z])/);
+    if (m) return +(parseFloat(m[1]) / 1000).toFixed(3);
+    return null;
+  }
+
+  // 柔性软风管细分：软管接口（帆布/三防复合布/钢丝撑筋铝箔，按展开面积 m²）与成品柔性软风管（按长度 m）
+  function flexKindOf(name) {
+    var s2 = String(name || '');
+    if (/帆布|三防复合布|三防布|钢丝撑筋|软接头|软连接|软管接口|柔性接口/.test(s2)) return 'interface';
+    return 'round';
   }
 
   // 风机盘管安装方式
@@ -797,8 +848,8 @@
     if (/带调节阀|调节阀百叶/.test(name)) return 'louverAdj';
     if (/圆形.*阀|圆形风口.*阀/.test(name)) return 'roundAdj';
     if (/方形散流器|散流器/.test(name) && !/圆形/.test(name)) return 'diffuserSq';
-    if (/圆形散流器/.test(name)) return 'diffuserRd';
-    if (/旋流/.test(name)) return 'diffuserRd';
+    // 圆形风口 / 圆形散流器 / 球形喷口 / 旋流风口：套圆形、流线形散流器（9-105~9-107，按风口直径分档）
+    if (/圆形散流器|圆形风口|球形喷口|喷口|旋流|圆形|圆型/.test(name)) return 'diffuserRd';
     if (/门铰/.test(name)) return 'hinge';
     if (/自垂/.test(name)) return 'autodrop';
     if (/防雨/.test(name)) return 'rain';
@@ -863,7 +914,7 @@
     return 'market';
   }
   function isWaterValveName(n) {
-    if (/防火|排烟|风管|风道|多叶|密闭|定风量|超压|初效|中效|高效|空气过滤|过滤吸收/.test(n)) return false;
+    if (/防火|排烟|风管|风道|多叶|密闭|定风量|超压|初效|中效|高效|空气过滤|过滤吸收|帆布|三防复合布|三防布|钢丝撑筋|软风管/.test(n)) return false;
     if (/自动排气阀|放风阀/.test(n)) return true;
     if (/温控阀|浮球阀|水位控制阀/.test(n)) return true;
     if (/截止阀|闸阀|球阀|Y型过滤器|y型过滤器|过滤器|软接头|橡胶软接头|补偿器|波纹补偿器|平衡阀|减压阀|电磁阀|水阀/.test(n)) return true;
@@ -904,7 +955,7 @@
     if (/防火风口/.test(n)) return 'vent';
     if (/多叶送|多叶排烟|多叶送风|多叶排风/.test(n)) return 'vent';
     if (/板式排烟口/.test(n)) return 'vent';
-    if (/散流器|旋流/.test(n)) return 'vent';
+    if (/散流器|旋流|喷口/.test(n)) return 'vent';
     if (/风口/.test(n)) return 'vent';
     if (/百叶/.test(n) && !/阀/.test(n)) return 'vent';
     // 风阀类
@@ -913,7 +964,7 @@
     if (/风管机/.test(n)) return 'acu';
     if (/场外运输|场外运/.test(n)) return 'transport';
     // 各材质风管按"先特殊后通用"识别，避免都被碳钢风管吃掉
-    if (/软风管|软管|软连接|软接头/.test(n)) return 'ductFlex';
+    if (/软风管|软管|软连接|软接头|帆布|三防复合布|三防布|钢丝撑筋/.test(n)) return 'ductFlex';
     if (/不锈钢/.test(n) && /风道|风管|管道/.test(n)) return 'ductSS';
     if (/玻璃钢/.test(n) && /风道|风管|管道/.test(n)) return 'ductFrp';
     if (/(复合|酚醛|玻镁|无机)/.test(n) && /风道|风管|管道/.test(n)) return 'ductComp';
@@ -963,9 +1014,10 @@
     };
 
     if (isDuctCat(category)) {
-      it.unit = category === 'ductFlex' ? 'm' : 'm²';
+      var flexK = category === 'ductFlex' ? flexKindOf(name) : '';
+      it.unit = category === 'ductFlex' ? (flexK === 'interface' ? 'm²' : 'm') : 'm²';
       it.brand = (P[category] && P[category].brand) || P.duct.brand;
-      it.sub = category === 'ductFlex' ? 'round' : ductShapeOf(name);
+      it.sub = category === 'ductFlex' ? flexK : ductShapeOf(name);
       it.thkName = parseThk(name);         // 名称里显式写的壁厚/板厚
       it.ductAuto = !parseDim(name).length && !parseDim(name).diameter;
       syncDuct(it);
@@ -1052,6 +1104,8 @@
       var af = parseAcuForm(name);
       it.sub = af || 'ceiling';
       it.acuAuto = !af;
+      it.acuMass = parseAcuMass(name);                        // 名称显式质量（t）
+      it.isVrf = /多联|VRF|室内机|室外机/.test(name);          // 多联机室内/室外机：定额按安装方式分档，价格按 HP/kW
       it.brand = (it.sub === 'pau') ? P.pau.brand : (it.sub === 'unit' ? P.ahu.brand : '国产中高档');
     }
     if (category === 'fcu') {
@@ -1060,7 +1114,19 @@
       it.brand = P.fcu.brand;
     }
     if (category === 'fume') it.brand = P.fume.brand;
-    if (category === 'vent') { it.sub = parseVentType(name); it.brand = P.vent.brand; }
+    if (category === 'vent') {
+      it.sub = parseVentType(name);
+      it.brand = P.vent.brand;
+      // 圆形风口 / 球形喷口写成「球形喷口-300」时，-300 即风口直径 300mm
+      var dv = it.dim;
+      if (!dv.diameter && !dv.length && !dv.width) {
+        var mfd = name.match(/[-－—–_]\s*(\d{2,4})\s*(?:mm)?\s*$/i);
+        if (mfd) {
+          var fdv = parseInt(mfd[1], 10);
+          if (fdv >= 100) { dv.diameter = fdv; it.roundVent = true; }
+        }
+      }
+    }
     if (category === 'valve') {
       it.sub = parseValveType(name); it.brand = P.valve.brand;
       // 圆形风道阀门：名称写成「对开多叶调节阀-300」即表示圆形风道、直径300mm，
@@ -1078,15 +1144,21 @@
       }
     }
     if (category === 'silencer') { it.sub = parseSilencerType(name); it.brand = P.silencer.brand; }
-    if (category === 'plenum') it.brand = P.plenum.brand;
+    if (category === 'plenum') {
+      it.sub = /消声/.test(name) ? 'silencer' : 'plain';       // 消声静压箱 9-213~215 / 普通静压箱 9-284
+      it.brand = P.plenum.brand;
+    }
     if (category === 'guideVane') { it.sub = 'vane'; it.brand = P.guideVane.brand; }
     if (category === 'renfang') { it.sub = /电动/.test(name) ? 'manualE' : 'manual'; it.brand = P.renfang.brand; }
 
     // 风管不按周长计价，周长字段置0（避免合并行输出误导性的"规格补充"）
-    it.perimeter = isDuctCat(category) ? 0 : calcPerimeter(it.dim);
+    // 风管不按周长计价；软管接口（帆布/三防复合布）需周长折算展开面积，保留
+    it.perimeter = (isDuctCat(category) && !(category === 'ductFlex' && it.sub === 'interface')) ? 0 : calcPerimeter(it.dim);
     it.area = calcArea(it.dim);
     it.surface = calcSurface(it.dim);
     it.sectionArea = calcSection(it.dim);
+    // 静压箱截面积：按名称前两维相乘（1200*1100*400 → 1.2×1.1=1.32m²）
+    it.plenumArea = (category === 'plenum') ? (it.area || 0) : 0;
     return it;
   }
 
@@ -1225,11 +1297,30 @@
         if (!q1) return { code: '', name: '', noTier: true };
         return q1;
       }
-      if (s === 'ceiling') return { code: '9-248', name: '吊顶式空调器安装 质量0.15t以内', inferred: true, massTier: true };
-      if (s === 'floor') return { code: '9-251', name: '落地式空调器安装 质量1.0t以内', inferred: true, massTier: true };
-      if (s === 'wall') return { code: '9-254', name: '墙上式空调器安装 质量0.1t以内', inferred: true, massTier: true };
-      if (s === 'split') return { code: '9-251', name: '落地式空调器安装 质量1.0t以内（分体空调按落地式套用）', inferred: true, massTier: true };
-      if (s === 'vrf') return { code: '9-251', name: '落地式空调器安装 质量1.0t以内（多联机按落地式套用）', inferred: true, massTier: true, vrf: true };
+      // 分段组装式空调器：定额单位 100kg
+      if (s === 'section') {
+        return { code: '9-270', name: '分段组装式空调器安装（按100kg计）', inferred: false, keepList: true, unit: '100kg', factor: 100 };
+      }
+      // 吊顶式 / 落地式 / 墙上式：按设备质量分档（名称质量优先，否则按风量估算，再否则取最小档）
+      if (s === 'ceiling' || s === 'floor' || s === 'wall' || s === 'vrf') {
+        var form = (s === 'vrf') ? 'floor' : s;
+        var mtiers = ACU_MASS_TIERS[form];
+        var mass = it.acuMass, massAuto = false;
+        if (!(mass > 0) && it.airVolume > 0) {
+          mass = +(it.airVolume * ACU_MASS_PER_KVOL[form] / 1000).toFixed(3);
+          massAuto = true;
+        }
+        var noMass = !(mass > 0);
+        var mi = tierIndex(mtiers, mass);
+        if (mi < 0) mi = 0;
+        it.acuMassUsed = noMass ? 0 : mass;
+        return {
+          code: mtiers[mi].code, name: ACU_FORM_TITLE[form] + mtiers[mi].label,
+          inferred: false, massTier: noMass, massAuto: massAuto,
+          overRange: noMass ? false : overOf(mtiers, mass)
+        };
+      }
+      if (s === 'split') return { code: '9-251', name: '落地式空调器安装 质量0.6t以内（分体空调按落地式套用）', inferred: true, massTier: true };
     }
 
     if (it.category === 'fcu') {
@@ -1265,7 +1356,13 @@
     }
 
     if (it.category === 'plenum') {
-      var q5 = pick(PLENUM_TIERS, it.sectionArea, '静压箱安装 截面积');
+      // 普通静压箱：单一子目 9-284
+      if (s !== 'silencer') return { code: PLENUM_PLAIN.code, name: PLENUM_PLAIN.name, inferred: false, keepList: true };
+      // 消声静压箱：按截面积（名称前两维相乘）分档；未识别尺寸时按最小档计列并提示
+      if (!(it.plenumArea > 0)) {
+        return { code: PLENUM_TIERS[0].code, name: '消声静压箱安装 ' + PLENUM_TIERS[0].label, inferred: false, plenumNoSize: true };
+      }
+      var q5 = pick(PLENUM_TIERS, it.plenumArea, '消声静压箱安装 截面积');
       if (!q5) return { code: '', name: '', noTier: true };
       return q5;
     }
@@ -1349,6 +1446,11 @@
     syncDuct(it);
     var tiers = ductTiersOf(it);
     var cat = it.category;
+
+    // 帆布 / 三防复合布 / 带钢丝撑筋铝箔软风管：按软管接口（9-36）以展开面积 m² 计
+    if (cat === 'ductFlex' && it.sub === 'interface') {
+      return { code: '9-36', name: '软管接口制作、安装', inferred: false, keepList: true, unit: 'm²' };
+    }
 
     var i = it.ductTierIdx;
     var noSize = !(it.ductSize > 0);
@@ -1510,6 +1612,14 @@
         var pr = Math.round(av * r.coef);
         return { price: pr, source: 'market', basis: '市场价（' + pack.brand + '）：风量' + av + 'm³/h × ' + r.coef + '元 = ' + pr + '元/台' };
       }
+      // 分段组装式空调器：现场分段组装的组合式机组，按风量套组合式机组市场价
+      if (s === 'section') {
+        var sv = it.airVolume;
+        if (!sv) return null;
+        var sr = coefByVolume(P.ahu.table, sv);
+        var spr = Math.round(sv * sr.coef);
+        return { price: spr, source: 'market', basis: '市场价（' + P.ahu.brand + '）：分段组装式空调器 风量' + sv + 'm³/h × ' + sr.coef + '元 = ' + spr + '元/台' };
+      }
       if (s === 'split') {
         var kwS = parseCoolingKw(it.name);
         if (kwS) {
@@ -1518,7 +1628,7 @@
         }
         return { price: 4200, source: 'market', basis: '市场价（国产中高档）：分体空调（壁挂/柜式）含安装辅材 4200元/台' };
       }
-      if (s === 'vrf') {
+      if (s === 'vrf' || it.isVrf) {
         var vf = P.vrf, hpm = it.name.match(/(\d+(?:\.\d+)?)\s*(?:HP|hp|匹)/), kwV = parseCoolingKw(it.name);
         if (hpm) {
           var vpr = Math.round(parseFloat(hpm[1]) * vf.perHp);
@@ -1576,8 +1686,14 @@
     if (it.category === 'plenum') {
       var sf = it.surface;
       if (!sf) return null;
-      var pp = +(sf * P.plenum.coef * P.plenum.factor).toFixed(2);
-      return { price: pp, source: 'market', basis: '市场价：展开面积' + sf + '㎡ × ' + P.plenum.coef + '元/㎡ × ' + P.plenum.factor + '系数 = ' + pp + '元/个' };
+      var isSil = it.sub === 'silencer';
+      var pcoef = isSil ? (P.plenum.silencerCoef || P.plenum.coef) : P.plenum.coef;
+      var pp = +(sf * pcoef * P.plenum.factor).toFixed(2);
+      return {
+        price: pp, source: 'market', brand: P.plenum.brand,
+        basis: '市场价（' + P.plenum.brand + '）：' + (isSil ? '消声静压箱' : '静压箱') + ' 展开面积' + sf + '㎡ × ' +
+          pcoef + '元/㎡ × ' + P.plenum.factor + '系数 = ' + pp + '元/个'
+      };
     }
 
     if (it.category === 'vav') {
@@ -1757,6 +1873,16 @@
       };
     }
 
+    if (cat === 'ductFlex' && it.sub === 'interface') {
+      var cj = P.ductFlex.joint;
+      var mk = /帆布/.test(it.name) ? 'canvas' : (/三防/.test(it.name) ? 'composite' : (/铝箔|钢丝撑筋/.test(it.name) ? 'foil' : 'default'));
+      var mu = cj.mats[mk];
+      return {
+        price: mu, source: 'market', brand: cj.brand,
+        basis: '市场价（' + cj.brand + '）：' + cj.labels[mk] + ' 软管接口成品 ' + mu + '元/㎡（按展开面积，含下料、缝合/咬口、法兰连接）'
+      };
+    }
+
     if (cat === 'ductFlex') {
       var cx = P.ductFlex, d = it.ductSize || 0, row = null;
       for (var i = 0; i < cx.tiers.length; i++) if (d <= cx.tiers[i].max) { row = cx.tiers[i]; break; }
@@ -1817,21 +1943,31 @@
     if (quota.supp) w.push('未匹配到标准清单/定额，已按补充清单' + SUPP_LIST + '＋' + quota.code + '计列，请补录定额与单价依据');
     if (it.category === 'other') w.push('未识别项目类型，请手动确认清单与定额');
     if (quota.overRange) w.push('参数超本类最大档，已取顶档子目，请按基价表核对');
-    if (quota.massTier) w.push('空调器定额按设备质量分档（0.15t/0.3t/0.5t…），名称未注质量，暂按最小档，请按实际重量核对');
+    if (quota.massTier && it.category === 'acu') w.push('名称未注设备质量（如 0.3t/300kg），空调器定额按质量分档，已按本安装方式最小档计列，请按设备样本核对');
+    if (it.category === 'acu' && ['unit', 'pau', 'section'].indexOf(it.sub) < 0 && !it.airVolume && !parseCoolingKw(it.name) && !/(\d+(?:\.\d+)?)\s*(?:HP|hp|匹)/.test(it.name)) {
+      w.push('未识别风量/制冷量/匹数，主材价待询价，建议名称补充（如 5000m³/h 或 5kW）');
+    }
+    if (quota.massAuto) w.push('设备质量按风量估算（吊顶式0.015、落地式0.025、墙上式0.012 t/1000m³·h⁻¹），已据此选档，请按实际重量核对');
     if (it.category === 'acu' && it.sub === 'pau') w.push('新风机组按组合式空调机组子目（9-257~264）套用，如基价表另有新风机组专用子目请手选');
     if (it.category === 'acu' && it.sub === 'split') w.push('分体空调按落地式空调器子目（9-251）套用，如按"空调器安装"其他子目计请手选');
-    if (it.category === 'acu' && it.sub === 'vrf') w.push('多联机室内/室外机按落地式空调器子目（9-251）套用，设备价按HP询价，如基价表另有多联机子目请手选');
+    if (it.category === 'acu' && it.isVrf) w.push('多联机室内/室外机按安装方式（吊顶/落地/墙上）套空调器子目，设备价按HP/制冷量询价，如基价表另有多联机专用子目请手选');
     if (it.category === 'fcu' && !it.fcuModel) w.push('未识别风机盘管FP型号，主材按FP-85参考价计，请按实际型号核对');
     if (it.category === 'vent' && it.sub === 'diffuserRd' && /旋流/.test(it.name)) w.push('旋流风口暂按圆形散流器子目，如有专用子目请手选');
     if (it.category === 'valve' && it.sub === 'butterfly' && !/蝶阀/.test(it.name)) w.push('未识别阀型，暂按蝶阀（9-63~67），请核对');
     if (it.category === 'silencer' && !it.perimeter) w.push('未识别消声器截面（长×宽），主材价按0计，请核对名称');
+    if (it.category === 'plenum' && it.sub === 'silencer') w.push('消声静压箱按截面积分档，截面积取名称前两维相乘（如 1200*1100*400 → 1.32㎡）');
+    if (quota.plenumNoSize) w.push('未识别静压箱尺寸（长×宽），消声静压箱暂按最小档 0.8㎡以内计列，请按图核对截面积');
     // 风管类专项提示
     if (isDuctCat(it.category)) {
       if (quota.noSize) w.push('名称未注风管尺寸，已按该类最小定额子目计列，请按实际规格核对');
       if (quota.noThk) w.push('不锈钢风管名称未注壁厚，按最小档 ' + quota.code + ' 计列，请按实际直径与壁厚核对');
       if (it.category === 'ductClean' && it.sub === 'round') w.push('圆形净化风管执行矩形净化风管子目，按周长（π×直径）分档');
       if (it.category === 'ductSS' && it.sub === 'rect') w.push('不锈钢板矩形风管执行圆形风管子目，按长边长套用');
-      if (it.category === 'ductFlex') w.push('柔性软风管按中心线长度（m）计量，场外运输按 π×直径×长度 折算展开面积');
+      if (it.category === 'ductFlex' && it.sub === 'interface') {
+        if (it.jointArea > 0) w.push('帆布/三防复合布/带钢丝撑筋铝箔软风管按软管接口以展开面积（m²）计量，接口长度按 250mm 折算，请按实际接口尺寸核对');
+        else w.push('未识别风口/软管尺寸，软管接口面积未能折算，工程量请按图填写（m²）');
+      }
+      else if (it.category === 'ductFlex') w.push('柔性软风管按中心线长度（m）计量，场外运输按 π×直径×长度 折算展开面积');
     }
     return w.join('；');
   }
@@ -1851,10 +1987,11 @@
       return (it.airVolume ? '风量' + it.airVolume + 'm³/h ' : '') + (it.sub === 'centrifugal' ? '离心式' : '轴流式');
     }
     if (it.category === 'acu') {
-      var lbl = { unit: '组合式空调机组', pau: '新风机组', ceiling: '吊顶式', floor: '落地式', wall: '墙上式', split: '分体空调', vrf: '多联机' }[it.sub] || '';
+      var lbl = { unit: '组合式空调机组', pau: '新风机组', ceiling: '吊顶式', floor: '落地式', wall: '墙上式', section: '分段组装式', split: '分体空调', vrf: '多联机' }[it.sub] || '';
       var hp = it.name.match(/(\d+(?:\.\d+)?)\s*(?:HP|hp|匹)/);
       if (hp) lbl += ' ' + hp[1] + 'HP';
-      return (it.airVolume ? '风量' + it.airVolume + 'm³/h ' : '') + lbl;
+      var massTxt = it.acuMassUsed ? ' 质量' + it.acuMassUsed + 't' : '';
+      return (it.airVolume ? '风量' + it.airVolume + 'm³/h ' : '') + lbl + massTxt;
     }
     if (it.category === 'fcu') {
       var fl = { ceiling: '吊顶式', floor: '落地式', wall: '壁挂式', cassette: '卡式' }[it.sub] || '';
@@ -1889,11 +2026,13 @@
       if (it.mergedSpec) return it.mergedSpec;
       var tt = ductThkText(it);
       var dl = ductTierLabel(it);
-      return (dimStr || dl || '未识别规格') + (tt ? ' ' + tt : '');
+      var ja = (it.category === 'ductFlex' && it.sub === 'interface' && it.jointArea && it.jointConv)
+        ? '（每个接口展开面积约' + it.jointArea + '㎡）' : '';
+      return (dimStr || dl || '未识别规格') + (tt ? ' ' + tt : '') + ja;
     }
     // 风口/风阀/消声器/静压箱
     if (it.category === 'plenum') {
-      return (dimStr || '') + (it.sectionArea ? '（截面积' + it.sectionArea + '㎡）' : '');
+      return (dimStr || '') + (it.plenumArea ? '（截面积' + it.plenumArea + '㎡）' : '');
     }
     if (it.category === 'guideVane') {
       return (dimStr || '') + (it.vanePer ? '（导流叶片展开面积约' + it.vanePer + '㎡）' : '');
@@ -2107,7 +2246,8 @@
       else if (it.category === 'bracket') defUnit = 'kg';
       else if (it.category === 'insulRubber' || it.category === 'insulGlass') defUnit = 'm³';
       else if (it.category === 'guideVane') defUnit = 'm²';
-      else if (it.category === 'ductFlex' || (PIPE && PIPE.LIST[it.category])) defUnit = 'm';
+      else if (it.category === 'ductFlex') defUnit = (it.sub === 'interface' ? 'm²' : 'm');
+      else if (PIPE && PIPE.LIST[it.category]) defUnit = 'm';
       else if (isDuctCat(it.category)) defUnit = 'm²';
       it.unit = unitCell || defUnit;
 
@@ -2123,6 +2263,26 @@
           it.insulConv = '按长度' + qty + 'm × π×(DN' + it.dn + '+δ' + it.insulThk + ') × δ 折算体积';
           it.unit = 'm³';
         }
+      }
+
+      // 软管接口（帆布/三防复合布/带钢丝撑筋铝箔软风管）：清单 030702008 按展开面积(m²)计
+      // 上传单位为 个/台/套 时按 周长×0.25m（标准软接头长度 250mm）折算；单位 m 时按 长度×周长
+      if (it.category === 'ductFlex' && it.sub === 'interface') {
+        var perM = (it.perimeter || 0) / 1000;
+        it.jointLen = 0.25;
+        it.jointArea = perM > 0 ? +(perM * it.jointLen).toFixed(3) : 0;
+        if (it.unit !== 'm²') {
+          if (it.unit === 'm' && perM > 0) {
+            it.quantity = +(it.quantity * perM).toFixed(2);
+            it.jointConv = '按长度' + qty + 'm × 周长' + perM.toFixed(2) + 'm 折算展开面积';
+          } else if (it.jointArea > 0) {
+            it.jointConv = '按' + it.quantity + it.unit + ' × 每个接口展开面积约' + it.jointArea + '㎡（周长×0.25m）折算';
+            it.quantity = +(it.quantity * it.jointArea).toFixed(2);
+          } else {
+            it.jointConv = '未识别风口尺寸，软管接口面积请按图填写（m²）';
+          }
+        }
+        it.unit = 'm²';
       }
 
       // 弯头导流叶片：清单 030702009 按展开面积(m²)计；上传单位为台/个/组时按风管截面积×2.5 折算
@@ -2345,7 +2505,7 @@
       if (d.diameter) dimStr = 'φ' + d.diameter;
       else if (d.length && d.width) dimStr = d.length + '×' + d.width + (d.height ? '×' + d.height : '');
       if (isDuctCat(it.category) && it.mergedCount) dimStr = ductTierLabel(it);
-      var sup = it.category === 'plenum' ? (it.sectionArea ? ('截面积' + it.sectionArea + '㎡') : '')
+      var sup = it.category === 'plenum' ? (it.plenumArea ? ('截面积' + it.plenumArea + '㎡') : '')
         : (it.perimeter ? ('周长' + it.perimeter + 'mm') : '');
       // 清单行
       rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
