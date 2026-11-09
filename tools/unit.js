@@ -775,6 +775,15 @@ ck('导出子序号不重复', (function () {
   capRows.slice(1).forEach(function (r) { var k = String(r[0]); if (seen[k]) dup = true; seen[k] = 1; });
   return dup;
 })(), false);
+var devRows = capRows.filter(function (r) { return r[9] === '子目下设备'; });
+ck('子目下设备编码Z00741-001', devRows[0][8], 'Z00741-001');
+ck('子目下设备编码Z00741-002', devRows[1][8], 'Z00741-002');
+ck('子目下设备编码格式', devRows.every(function (r) { return /^Z00741-\d{3}$/.test(r[8]); }), true);
+ck('子目下设备编码互不相同', (function () {
+  var seen = {}, dup = false;
+  devRows.forEach(function (r) { if (seen[r[8]]) dup = true; seen[r[8]] = 1; });
+  return dup;
+})(), false);
 
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

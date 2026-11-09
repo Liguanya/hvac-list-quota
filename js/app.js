@@ -2499,6 +2499,7 @@
     var rows = [];
     rows.push(['序号', '项目名称', '类型', '参数', '品牌参考', '规格', '规格补充', '工程量',
       '项目编码', '类型', '名称', '项目特征', '单位', '工程量', '主材单价']);
+    var zIdx = 0;   // 子目下设备/主材编码流水号，保证每条编码唯一（Z00741-001、-002……）
     data.forEach(function (it) {
       var d = it.dim;
       var param = it.airVolume ? (it.airVolume + 'm³/h') : '';
@@ -2522,8 +2523,9 @@
       });
       // 子目下设备行（主材）；场外运输等不设主材的子目跳过
       if (it.priceSource !== 'none') {
+        zIdx++;
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
-          'Z00741', '子目下设备', it.name, '主材：' + (specText(it) || it.name), it.unit, it.quantity,
+          'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.name, '主材：' + (specText(it) || it.name), it.unit, it.quantity,
           it.price === null ? '' : num2(it.price)]);
       }
     });
