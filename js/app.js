@@ -2508,19 +2508,21 @@
       if (isDuctCat(it.category) && it.mergedCount) dimStr = ductTierLabel(it);
       var sup = it.category === 'plenum' ? (it.plenumArea ? ('截面积' + it.plenumArea + '㎡') : '')
         : (it.perimeter ? ('周长' + it.perimeter + 'mm') : '');
+      // A列序号：清单行为主序号，其下定额/附加定额/子目下设备行为子序号 1.1、1.2……
+      var sub = 0;
       // 清单行
       rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
-        it.listCode, '清单', it.name, it.features, it.unit, it.quantity, '']);
+        it.listCode, '清单行', it.name, it.features, it.unit, it.quantity, '']);
       // 定额行
-      rows.push(['', '', '', '', '', '', '', '',
-        it.quotaCode || '', '定额', it.quotaName || '（待人工处理）', '', '', '', '']);
+      rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
+        it.quotaCode || '', '定额行', it.quotaName || '（待人工处理）', '', '', '', '']);
       // 附加定额行（管道：消毒冲洗 8-490、沟槽管件 8-220）
       (it.extras || []).forEach(function (x) {
-        rows.push(['', '', '', '', '', '', '', '', x.code, '定额', x.name, '', '', '', '']);
+        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name, '', '', '', '']);
       });
       // 子目下设备行（主材）；场外运输等不设主材的子目跳过
       if (it.priceSource !== 'none') {
-        rows.push(['', '', '', '', '', '', '', '',
+        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
           'Z00741', '子目下设备', it.name, '主材：' + (specText(it) || it.name), it.unit, it.quantity,
           it.price === null ? '' : num2(it.price)]);
       }

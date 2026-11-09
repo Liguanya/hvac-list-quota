@@ -759,6 +759,22 @@ ck('导出子目下设备K不是品牌', devRow[10] === (expItems[0].brand || '�
 ck('导出定额行K保留定额名称', quotaRow[10], '吊顶式空调器安装 质量0.15t以内');
 ck('导出K列无空值', capRows.slice(1).every(function (r) { return r[10] !== '' && r[10] !== undefined; }), true);
 ck('导出K列不出现类别标签', capRows.slice(1).every(function (r) { return r[10] !== '空调器'; }), true);
+ck('导出A2=清单序号1', String(listRow[0]), '1');
+ck('导出A3=定额子序号1.1', String(quotaRow[0]), '1.1');
+ck('导出A4=主材子序号1.2', String(devRow[0]), '1.2');
+ck('导出第二清单A5=2', String(capRows[4][0]), '2');
+ck('导出第二清单定额A6=2.1', String(capRows[5][0]), '2.1');
+ck('导出第二清单主材A7=2.2', String(capRows[6][0]), '2.2');
+ck('导出J2=清单行', listRow[9], '清单行');
+ck('导出J3=定额行', quotaRow[9], '定额行');
+ck('导出J4=子目下设备', devRow[9], '子目下设备');
+ck('导出A列无空值', capRows.slice(1).every(function (r) { return r[0] !== '' && r[0] !== undefined; }), true);
+ck('导出J列无裸清单定额', capRows.slice(1).every(function (r) { return r[9] !== '清单' && r[9] !== '定额'; }), true);
+ck('导出子序号不重复', (function () {
+  var seen = {}, dup = false;
+  capRows.slice(1).forEach(function (r) { var k = String(r[0]); if (seen[k]) dup = true; seen[k] = 1; });
+  return dup;
+})(), false);
 
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
