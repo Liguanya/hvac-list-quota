@@ -2510,7 +2510,7 @@
         : (it.perimeter ? ('周长' + it.perimeter + 'mm') : '');
       // 清单行
       rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
-        it.listCode, '清单', LIST_NAME[it.category] || it.categoryLabel, it.features, it.unit, it.quantity, '']);
+        it.listCode, '清单', it.name, it.features, it.unit, it.quantity, '']);
       // 定额行
       rows.push(['', '', '', '', '', '', '', '',
         it.quotaCode || '', '定额', it.quotaName || '（待人工处理）', '', '', '', '']);
@@ -2521,7 +2521,7 @@
       // 子目下设备行（主材）；场外运输等不设主材的子目跳过
       if (it.priceSource !== 'none') {
         rows.push(['', '', '', '', '', '', '', '',
-          'Z00741', '子目下设备', it.brand || '主材', '主材：' + (specText(it) || it.name), it.unit, it.quantity,
+          'Z00741', '子目下设备', it.name, '主材：' + (specText(it) || it.name), it.unit, it.quantity,
           it.price === null ? '' : num2(it.price)]);
       }
     });

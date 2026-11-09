@@ -744,5 +744,21 @@ ck('橡塑100m DN100 折1.23m³', conv[0].quantity, 1.23);
 var conv2 = A.parseRows([['序号', '项目名称', '数量', '单位'], [1, '离心玻璃棉保温', 100, 'm²']]);
 ck('玻璃棉按面积折算4m³', conv2[0].quantity, 4);
 
+console.log('== 广联达导出 K 列（名称列统一为项目名称）==');
+var capRows = null;
+global.XLSX = { utils: { aoa_to_sheet: function (rows) { capRows = rows; return {}; },
+  book_new: function () { return {}; }, book_append_sheet: function () {} }, writeFile: function () {} };
+var expItems = A.parseRows([['序号', '项目名称', '数量'], [1, '吊顶式空调器 2.5kW', 10], [2, '镀锌钢板风管 1000*400', 100]]);
+expItems.forEach(function (it) { var q = A.matchQuota(it); if (q) { it.quotaCode = q.code; it.quotaName = q.name; } });
+A.exportGLD(expItems);
+var listRow = capRows[1], quotaRow = capRows[2], devRow = capRows[3];
+ck('导出K2=项目名称', listRow[10], '吊顶式空调器 2.5kW');
+ck('导出K2等于B2', listRow[10], listRow[1]);
+ck('导出子目下设备K=项目名称', devRow[10], '吊顶式空调器 2.5kW');
+ck('导出子目下设备K不是品牌', devRow[10] === (expItems[0].brand || '主材'), false);
+ck('导出定额行K保留定额名称', quotaRow[10], '吊顶式空调器安装 质量0.15t以内');
+ck('导出K列无空值', capRows.slice(1).every(function (r) { return r[10] !== '' && r[10] !== undefined; }), true);
+ck('导出K列不出现类别标签', capRows.slice(1).every(function (r) { return r[10] !== '空调器'; }), true);
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
