@@ -633,8 +633,10 @@ var mix = A.parseRows([['序号', '项目名称', '数量'],
   [5, '镀锌钢管 DN100', 80],
   [6, 'PPR管 De32', 120]]);
 ck('混合条数（3设备+1风管+2管道+支架+运输）', mix.length, 8);
-ck('混合含运输行', mix[mix.length - 1].category, 'transport');
-ck('运输量只算风管', mix[mix.length - 1].quantity, 200);
+ck('混合含运输行', mix.filter(function (x) { return x.category === 'transport'; }).length, 1);
+ck('运输量只算风管', mix.filter(function (x) { return x.category === 'transport'; })[0].quantity, 200);
+ck('运输行紧跟风管清单', mix[4].category, 'transport');
+ck('运输行序号=风管序号+1', mix[4].index, '5');
 ck('混合设备条数', mix.filter(function (x) { return x.category === 'chiller' || x.category === 'coolingTower' || x.category === 'heatpump'; }).length, 3);
 ck('混合管道条数', mix.filter(function (x) { return x.unit === 'm'; }).length, 2);
 ck('冷水机组主材合计', mix.filter(function (x) { return x.category === 'chiller'; })[0].quantity * mix.filter(function (x) { return x.category === 'chiller'; })[0].price, 1360000);

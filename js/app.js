@@ -703,18 +703,19 @@
   }
 
   // 全部风管匹配完成后追加"通风管道场外运输"（030702301 + 9-56），工程量=全部风管面积合计
+  // 位置：紧跟最后一条风管清单之后（属风道相关清单项），不放到全表末尾
   function withTransport(items) {
-    var area = 0, has = false, base = [];
+    var area = 0, has = false, base = [], lastDuct = -1;
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
       if (it.category === 'transport') continue;
       base.push(it);
-      if (isDuctCat(it.category)) { has = true; area += ductAreaOf(it); }
+      if (isDuctCat(it.category)) { has = true; area += ductAreaOf(it); lastDuct = base.length - 1; }
     }
     if (!has) return items;
     area = +area.toFixed(2);
     var row = {
-      index: String(base.length + 1),
+      index: '',
       name: '通风管道场外运输',
       unit: 'm²',
       quantity: area,
@@ -728,13 +729,17 @@
       listName: LIST_NAME.transport,
       quotaCode: '9-56',
       quotaName: '通风管道场外运输',
+      quotaUnit: '10m²',      // 第九册 9-56 计量单位为 10m²
+      quotaFactor: 10,
       price: null,
       priceSource: 'none',
       priceBasis: '场外运输子目不设主材，仅计人工、材料（绑扎、垫木）与机械',
       warn: '工程量按全部风管展开面积合计' + area + 'm² 计列，定额固定 9-56，不另计主材价'
     };
     row.features = '1.名称：通风管道场外运输\n2.工程量口径：全部风管展开面积合计\n3.其他：通风管道装车、场外运输、卸车（该子目不设主材）';
-    base.push(row);
+    if (lastDuct >= 0) base.splice(lastDuct + 1, 0, row); else base.push(row);
+    // 清单序号重排为连续 1..n，保证插入后层级与序号不错位
+    for (var k = 0; k < base.length; k++) base[k].index = String(k + 1);
     return base;
   }
 
