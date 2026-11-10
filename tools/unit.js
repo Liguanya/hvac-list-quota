@@ -831,5 +831,18 @@ ck('主材行项目特征为空', devOne[11], '');
 ck('主材行规格补充列为空', devOne[6], '');
 ck('所有主材行项目特征为空', capRows.filter(function (r) { return r[9] === '子目下设备'; }).every(function (r) { return r[11] === ''; }), true);
 
+console.log('== 风管定额计量单位 10m²（工程量按面积÷10 换算）==');
+capRows = null;
+var ductItems = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢板矩形风管 1000*400', 280]]);
+A.exportGLD(ductItems);
+ck('风管清单单位m²', capRows[1][12], 'm²');
+ck('风管定额行单位10m²', capRows[2][12], '10m²');
+ck('风管定额行工程量=280/10', capRows[2][13], 28);
+ck('风管主材单位m²', capRows[3][12], 'm²');
+ck('风管主材工程量=280', capRows[3][13], 280);
+var flexItems = A.parseRows([['序号', '项目名称', '数量'], [1, '帆布软接头 800*400', 20]]);
+A.exportGLD(flexItems);
+ck('软管接口单位m²不换算', capRows[2][12], 'm²');
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

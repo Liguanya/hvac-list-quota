@@ -1464,6 +1464,9 @@
       noSize: noSize
     };
     if (cat === 'ductSS' && !it.thkName) res.noThk = true;
+    // 风管制作安装定额计量单位为 10m²（第九册），导出时工程量须按面积÷10 换算；
+    // 柔性软风管 9-39~9-43 按 m 计，软管接口 9-36 按 m² 计，均不换算
+    if (cat !== 'ductFlex') { res.unit = '10m²'; res.factor = 10; }
     return res;
   }
 
