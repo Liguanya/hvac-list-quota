@@ -785,5 +785,20 @@ ck('子目下设备编码互不相同', (function () {
   return dup;
 })(), false);
 
+console.log('== 管道类：主材行紧跟主定额、附加定额排后 ==');
+capRows = null;
+var pipeItems = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢管 DN100', 100]]);
+pipeItems.forEach(function (it) { var q = A.matchQuota(it); if (q) { it.quotaCode = q.code; it.quotaName = q.name; } });
+A.exportGLD(pipeItems);
+ck('管道清单行', capRows[1][9], '清单行');
+ck('管道主定额行', capRows[2][9], '定额行');
+ck('管道主材紧跟定额', capRows[3][9], '子目下设备');
+ck('管道主材行号1.2', String(capRows[3][0]), '1.2');
+ck('管道主材编码', capRows[3][8], 'Z00741-001');
+ck('管道附加定额排最后', capRows[4][9], '定额行');
+ck('管道附加定额编码8-491', capRows[4][8], '8-491');
+ck('管道附加定额行号1.3', String(capRows[4][0]), '1.3');
+ck('管道附加定额无主材单价', capRows[4][14], '');
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

@@ -2517,17 +2517,17 @@
       // 定额行
       rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
         it.quotaCode || '', '定额行', it.quotaName || '（待人工处理）', '', '', '', '']);
-      // 附加定额行（管道：消毒冲洗 8-490、沟槽管件 8-220）
-      (it.extras || []).forEach(function (x) {
-        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name, '', '', '', '']);
-      });
-      // 子目下设备行（主材）；场外运输等不设主材的子目跳过
+      // 子目下设备行（主材）：紧跟其对应定额行；场外运输等不设主材的子目跳过
       if (it.priceSource !== 'none') {
         zIdx++;
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
           'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.name, '主材：' + (specText(it) || it.name), it.unit, it.quantity,
           it.price === null ? '' : num2(it.price)]);
       }
+      // 附加定额行（管道：消毒冲洗 8-490、沟槽管件 8-220），本身无主材，排在主材行之后
+      (it.extras || []).forEach(function (x) {
+        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name, '', '', '', '']);
+      });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 10 },
