@@ -800,5 +800,27 @@ ck('管道附加定额编码8-491', capRows[4][8], '8-491');
 ck('管道附加定额行号1.3', String(capRows[4][0]), '1.3');
 ck('管道附加定额无主材单价', capRows[4][14], '');
 
+console.log('== 定额行必须带单位与工程量（广联达识别子目行的前提）==');
+capRows = null;
+var pipe2 = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢管 DN100', 100]]);
+A.exportGLD(pipe2);
+ck('管道定额行单位10m', capRows[2][12], '10m');
+ck('管道定额行工程量=100/10', capRows[2][13], 10);
+var flushRow = capRows.filter(function (r) { return r[9] === '定额行' && String(r[8]).indexOf('8-49') === 0; })[0];
+ck('冲洗定额单位100m', flushRow[12], '100m');
+ck('冲洗定额工程量=100/100', flushRow[13], 1);
+ck('所有定额行有单位', capRows.filter(function (r) { return r[9] === '定额行'; }).every(function (r) { return r[12] !== '' && r[12] !== undefined && r[12] !== null; }), true);
+ck('所有定额行有工程量', capRows.filter(function (r) { return r[9] === '定额行'; }).every(function (r) { return r[13] !== '' && r[13] !== undefined && r[13] !== null && !isNaN(r[13]); }), true);
+var equipRows = A.parseRows([['序号', '项目名称', '数量'], [1, '吊顶式空调器 2.5kW', 10]]);
+A.exportGLD(equipRows);
+ck('设备定额行单位台', capRows[2][12], '台');
+ck('设备定额行工程量=清单量', capRows[2][13], 10);
+
+console.log('== 分组标题行不组价 ==');
+var grp = A.parseRows([['序号', '项目名称', '工程量'], [null, '管路及阀门', null], ['1', '无缝钢管 DN300', 150], [null, '风机盘管及空调机组阀门', null], ['2', '镀锌钢管 DN100', 80]]);
+ck('分组标题被跳过', grp.filter(function (x) { return x.category !== 'bracket'; }).length, 2);
+ck('分组标题不进清单', grp.some(function (x) { return x.name.indexOf('管路及阀门') >= 0; }), false);
+ck('真实清单保留', grp.map(function (x) { return x.name; }).join('|').indexOf('无缝钢管 DN300') >= 0, true);
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

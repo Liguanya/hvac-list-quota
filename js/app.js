@@ -2155,7 +2155,7 @@
       var row = aoa[r] || [];
       var m = { name: -1, qty: -1, seq: -1, unit: -1 };
       for (var c = 0; c < row.length; c++) {
-        var t = cellText(row[c]);
+        var t = cellText(row[c]).replace(/\s+/g, '');   // 兼容「项 目 名 称」这类带空格的表头
         if (!t || t.length > 12) continue;
         if (m.name < 0 && /名称|项目内容/.test(t)) m.name = c;
         if (m.qty < 0 && /数量|工程量/.test(t)) m.qty = c;
@@ -2223,6 +2223,12 @@
         // 既无工程量又不含数字，视为标题/说明行跳过
         if (!(!isNaN(qty) && qty > 0) && !/\d/.test(name)) continue;
       }
+      // 分组标题行（如「管路及阀门」「风机盘管及空调机组阀门」）：无序号、无工程量、名称不含数字，
+      // 不是清单项，跳过，避免被当成清单项套清单定额
+      var hasSeq = false;
+      if (cols.seq >= 0) hasSeq = cellText(row[cols.seq]) !== '';
+      else { for (var cs = 0; cs < nameCol; cs++) { if (cellText(row[cs]) !== '') { hasSeq = true; break; } } }
+      if (!hasSeq && !(!isNaN(qty) && qty > 0) && !/\d/.test(name)) continue;
 
       autoIdx++;
       var seqRaw = cols.seq >= 0 ? row[cols.seq] : null;
@@ -2304,6 +2310,9 @@
       quota = applySupp(it, quota);
       it.quotaCode = quota.code;
       it.quotaName = quota.name;
+      // 定额计量单位与系数（管道 10m、冲洗 100m、支架 100kg 等需换算）；定额表未标注的按清单单位、系数 1
+      it.quotaUnit = quota.unit || it.unit;
+      it.quotaFactor = quota.factor || 1;
       it.codeInferred = !!quota.inferred;
       it.supp = !!quota.supp;
       if (PIPE && PIPE.LIST[it.category]) it.extras = PIPE.buildExtraQuotas(it, quota);
@@ -2339,6 +2348,8 @@
     it.supp = !!q.supp;
     it.quotaCode = q.code;
     it.quotaName = q.name;
+    it.quotaUnit = q.unit || it.unit;
+    it.quotaFactor = q.factor || 1;
     it.codeInferred = !!q.inferred;
     if (PIPE && PIPE.LIST[it.category]) { it.extras = PIPE.buildExtraQuotas(it, q); it.brand = PIPE.brandOf(it) || it.brand; }
     it.warn = buildWarn(it, q);
@@ -2494,6 +2505,7 @@
   // 导出
   // ============================================================
   function num2(v) { return (v === null || v === undefined) ? '' : +Number(v).toFixed(2); }
+  function round4(v) { return (v === null || v === undefined || isNaN(v)) ? '' : Math.round(Number(v) * 10000) / 10000; }
 
   function exportGLD(data) {
     var rows = [];
@@ -2515,8 +2527,11 @@
       rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
         it.listCode, '清单行', it.name, it.features, it.unit, it.quantity, '']);
       // 定额行
+      // 定额行：必须带「单位 + 工程量」，否则广联达导入时会把定额行识别成一级分部行，
+      // 其下的主材行随之错判为清单行（其他四站均带单位与工程量）
       rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
-        it.quotaCode || '', '定额行', it.quotaName || '（待人工处理）', '', '', '', '']);
+        it.quotaCode || '', '定额行', it.quotaName || '（待人工处理）', '',
+        it.quotaUnit || it.unit, round4(it.quantity / (it.quotaFactor || 1)), '']);
       // 子目下设备行（主材）：紧跟其对应定额行；场外运输等不设主材的子目跳过
       if (it.priceSource !== 'none') {
         zIdx++;
@@ -2526,7 +2541,8 @@
       }
       // 附加定额行（管道：消毒冲洗 8-490、沟槽管件 8-220），本身无主材，排在主材行之后
       (it.extras || []).forEach(function (x) {
-        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name, '', '', '', '']);
+        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name, '',
+          x.unit || it.unit, round4((x.qty || 0) / (x.factor || 1)), '']);
       });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
