@@ -846,5 +846,34 @@ var flexItems = A.parseRows([['序号', '项目名称', '数量'], [1, '帆布�
 A.exportGLD(flexItems);
 ck('软管接口单位m²不换算', capRows[2][12], 'm²');
 
+console.log('== 管道支架紧跟管道之后（不放到全表末尾）==');
+var brPos = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢管 DN100', 80], [2, '无缝钢管 DN150', 60], [3, '橡塑保温管壳 DN100', 20]]);
+var brIdx = brPos.map(function (x) { return x.category; }).indexOf('bracket');
+ck('支架紧跟在最后一条管道之后', brPos[brIdx - 1].category, 'seamless');
+ck('支架在保温之前', brIdx < brPos.map(function (x) { return x.category; }).indexOf('insulRubber'), true);
+ck('支架序号连续', brPos[brIdx].index, String(brIdx + 1));
+A.exportGLD(brPos);
+var brExp = capRows.filter(function (r) { return r[9] === '定额行' && r[8] === '7-138'; })[0];
+ck('支架定额单位100kg', brExp[12], '100kg');
+ck('支架定额工程量=162/100', brExp[13], 1.62);
+
+console.log('== 管道支架按系统分组（每个系统各补一条）==');
+var sysRows = A.parseRows([
+  ['序号', '项目名称', '数量'],
+  ['', '给水管道', ''],
+  [1, '镀锌钢管 DN100', 80],
+  [2, '镀锌钢管 DN50', 40],
+  ['', '中水管道', ''],
+  [3, '镀锌钢管 DN80', 60],
+  [4, '截止阀 DN50', 5]
+]);
+var sysBr = sysRows.filter(function (x) { return x.category === 'bracket'; });
+ck('两个系统各一条支架', sysBr.length, 2);
+ck('给水系统支架量=80*0.9+40*0.45', sysBr[0].quantity, 90);
+ck('中水系统支架量=60*0.9', sysBr[1].quantity, 54);
+var sysCats = sysRows.map(function (x) { return x.category; });
+ck('给水支架紧跟给水管道', sysCats[sysCats.indexOf('bracket') - 1], 'galv');
+ck('中水支架在中水管道之后、阀门之前', sysCats.indexOf('bracket', sysCats.indexOf('bracket') + 1) < sysCats.indexOf('waterValve'), true);
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

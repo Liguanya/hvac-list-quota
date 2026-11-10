@@ -751,44 +751,63 @@
     for (var i = 0; i < tbl.length; i++) if (dn <= tbl[i].max) return tbl[i].w;
     return tbl[tbl.length - 1].w;
   }
+  // 管道支架：按系统分别补项（系统来自清单里的分组标题行，如「给水管道」「中水管道」；
+  // 无分组标题时全表算一个系统），每个系统在其最后一条管道清单之后插入一条支架，
+  // 位置紧跟管道，不放到全表末尾
   function withBracket(items) {
-    var hasPipe = false, exists = false, total = 0, pipeLen = 0;
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i];
-      if (it.category === 'bracket') exists = true;
+    var exists = false;
+    for (var i = 0; i < items.length; i++) if (items[i].category === 'bracket') exists = true;
+    if (exists) return items;
+    var order = [], map = {};
+    for (var j = 0; j < items.length; j++) {
+      var it = items[j];
+      var key = it.system || '';
+      if (!map[key]) { map[key] = { key: key, lastPipe: -1, len: 0, wt: 0 }; order.push(map[key]); }
       if (PIPE && PIPE.LIST[it.category]) {
-        hasPipe = true;
-        pipeLen += (it.quantity || 0);
-        total += (it.quantity || 0) * bracketWeightPerM(it.dn);
+        map[key].lastPipe = j;
+        map[key].len += (it.quantity || 0);
+        map[key].wt += (it.quantity || 0) * bracketWeightPerM(it.dn);
       }
     }
-    if (!hasPipe || exists) return items;
-    total = Math.round(total * 10) / 10;
-    if (!(total > 0)) return items;
-    var row = {
-      index: String(items.length + 1),
-      name: '管道支架',
-      unit: 'kg',
-      quantity: total,
-      brand: '型钢（信息价）',
-      category: 'bracket',
-      categoryLabel: CAT_LABEL.bracket,
-      sub: '',
-      dn: null,
-      dim: { length: 0, width: 0, height: 0, diameter: 0 },
-      perimeter: 0,
-      listCode: LIST.bracket,
-      listName: LIST_NAME.bracket,
-      quotaCode: '7-138',
-      quotaName: '管道支架制作、安装 管道支吊架',
-      price: P.bracket.steel,
-      priceSource: 'info',
-      priceBasis: '信息价：型钢（角钢、槽钢）' + P.bracket.steel + '元/kg',
-      priceBrand: '',
-      warn: '管道支架为自动补项：工程量按管道总长' + +pipeLen.toFixed(2) + 'm 与管径分档含量估算约' + total + 'kg（0.45~3.2kg/m），定额 7-138 计量单位为100kg，请按图纸支架实际重量调整'
-    };
-    row.features = '1.名称：管道支架（支/吊架、基础型钢）\n2.材质：型钢（角钢、槽钢）制作\n3.工作内容：切断、调直、钻孔、焊接、除锈刷油、安装固定\n4.主材：型钢按信息价' + P.bracket.steel + '元/kg 计入\n5.工程量：按管道长度估算' + total + 'kg，请按图纸核实';
-    items.push(row);
+    var groups = order.filter(function (g) { return g.lastPipe >= 0 && g.wt > 0; });
+    if (!groups.length) return items;
+    // 从后往前插，避免插入后前面分组的下标失效
+    groups.sort(function (a, b) { return b.lastPipe - a.lastPipe; });
+    var multi = groups.length > 1;
+    groups.forEach(function (g) {
+      var total = Math.round(g.wt * 10) / 10;
+      if (!(total > 0)) return;
+      var pipeLen = +g.len.toFixed(2);
+      var nm = '管道支架';
+      var row = {
+        index: '',
+        name: nm,
+        unit: 'kg',
+        quantity: total,
+        brand: '型钢（信息价）',
+        category: 'bracket',
+        categoryLabel: CAT_LABEL.bracket,
+        sub: '',
+        dn: null,
+        dim: { length: 0, width: 0, height: 0, diameter: 0 },
+        perimeter: 0,
+        listCode: LIST.bracket,
+        listName: LIST_NAME.bracket,
+        quotaCode: '7-138',
+        quotaName: '管道支架制作、安装 管道支吊架',
+        quotaUnit: '100kg',
+        quotaFactor: 100,
+        price: P.bracket.steel,
+        priceSource: 'info',
+        priceBasis: '信息价：型钢（角钢、槽钢）' + P.bracket.steel + '元/kg',
+        priceBrand: '',
+        system: g.key,
+        autoAdded: true,
+        warn: '管道支架为自动补项' + (g.key ? '（' + g.key + '）' : '') + '：工程量按管道总长' + pipeLen + 'm 与管径分档含量估算约' + total + 'kg（0.45~3.2kg/m），定额 7-138 计量单位为100kg，请按图纸支架实际重量调整'
+      };
+      row.features = '1.名称：管道支架（支/吊架、基础型钢）' + (g.key ? '（系统：' + g.key + '）' : '') + '\n2.材质：型钢（角钢、槽钢）制作\n3.工作内容：切断、调直、钻孔、焊接、除锈刷油、安装固定\n4.主材：型钢按信息价' + P.bracket.steel + '元/kg 计入\n5.工程量：按管道长度估算' + total + 'kg，请按图纸核实';
+      items.splice(g.lastPipe + 1, 0, row);
+    });
     return items;
   }
 
@@ -2198,6 +2217,7 @@
     buSeq = 0;
     var results = [];
     var autoIdx = 0;
+    var curSystem = '';   // 当前系统分组名（来自清单里的分组标题行，如「给水管道」「中水管道」），用于管道支架按系统分套
     var cols = detectColumns(aoa);
     for (var r = 0; r < aoa.length; r++) {
       if (r < cols.start) continue;
@@ -2227,16 +2247,14 @@
         }
       }
 
-      if (it.category === 'other') {
-        // 既无工程量又不含数字，视为标题/说明行跳过
-        if (!(!isNaN(qty) && qty > 0) && !/\d/.test(name)) continue;
-      }
-      // 分组标题行（如「管路及阀门」「风机盘管及空调机组阀门」）：无序号、无工程量、名称不含数字，
-      // 不是清单项，跳过，避免被当成清单项套清单定额
+      // 分组标题行（如「给水管道」「中水管道」「管路及阀门」）：无序号、无工程量、名称不含数字，
+      // 不是清单项——记为当前系统分组名后跳过，管道支架按系统分别补项
       var hasSeq = false;
       if (cols.seq >= 0) hasSeq = cellText(row[cols.seq]) !== '';
       else { for (var cs = 0; cs < nameCol; cs++) { if (cellText(row[cs]) !== '') { hasSeq = true; break; } } }
-      if (!hasSeq && !(!isNaN(qty) && qty > 0) && !/\d/.test(name)) continue;
+      var isTitle = !(!isNaN(qty) && qty > 0) && !/\d/.test(name);
+      if (isTitle && !hasSeq) { curSystem = name; continue; }        // 无序号 → 分组标题，记系统名
+      if (isTitle && it.category === 'other') continue;              // 有序号但无工程量的说明行 → 跳过
 
       autoIdx++;
       var seqRaw = cols.seq >= 0 ? row[cols.seq] : null;
@@ -2345,9 +2363,15 @@
       }
 
       it.features = generateFeature('guanglianda', it);
+      it.system = curSystem;   // 所属系统分组，管道支架按系统分套
       results.push(it);
     }
-    return withTransport(withBracket(mergeDucts(results)));
+    var out = withTransport(withBracket(mergeDucts(results)));
+    // 有自动补项（支架/运输）插入时，清单序号统一重排为连续 1..n，否则保留用户原序号
+    var hasAuto = false;
+    for (var q = 0; q < out.length; q++) if (out[q].autoAdded) hasAuto = true;
+    if (hasAuto) for (var q2 = 0; q2 < out.length; q2++) out[q2].index = String(q2 + 1);
+    return out;
   }
 
   function recomputeQuota(it) {
