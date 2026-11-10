@@ -2525,7 +2525,8 @@
       var sub = 0;
       // 清单行
       rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
-        it.listCode, '清单行', it.name, it.features, it.unit, it.quantity, '']);
+        it.listCode, '清单行', it.name, it.features, it.unit, it.quantity,
+        it.price === null ? '' : num2(it.price)]);
       // 定额行
       // 定额行：必须带「单位 + 工程量」，否则广联达导入时会把定额行识别成一级分部行，
       // 其下的主材行随之错判为清单行（其他四站均带单位与工程量）
@@ -2533,10 +2534,12 @@
         it.quotaCode || '', '定额行', it.quotaName || '（待人工处理）', '',
         it.quotaUnit || it.unit, round4(it.quantity / (it.quotaFactor || 1)), '']);
       // 子目下设备行（主材）：紧跟其对应定额行；场外运输等不设主材的子目跳过
+      // 注意：项目特征列（L）必须留空——广联达只要看到该行有项目特征，就会判成清单行，
+      // 主材规格改放「规格补充」列（G），与给排水/消防/电气三站保持一致
       if (it.priceSource !== 'none') {
         zIdx++;
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
-          'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.name, '主材：' + (specText(it) || it.name), it.unit, it.quantity,
+          'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.name, '', it.unit, it.quantity,
           it.price === null ? '' : num2(it.price)]);
       }
       // 附加定额行（管道：消毒冲洗 8-490、沟槽管件 8-220），本身无主材，排在主材行之后

@@ -822,5 +822,14 @@ ck('分组标题被跳过', grp.filter(function (x) { return x.category !== 'bra
 ck('分组标题不进清单', grp.some(function (x) { return x.name.indexOf('管路及阀门') >= 0; }), false);
 ck('真实清单保留', grp.map(function (x) { return x.name; }).join('|').indexOf('无缝钢管 DN300') >= 0, true);
 
+console.log('== 主材行项目特征列必须为空（否则广联达判为清单行）==');
+capRows = null;
+var p3 = A.parseRows([['序号', '项目名称', '数量'], [1, '镀锌钢管 DN100', 100]]);
+A.exportGLD(p3);
+var devOne = capRows.filter(function (r) { return r[9] === '子目下设备'; })[0];
+ck('主材行项目特征为空', devOne[11], '');
+ck('主材行规格补充列为空', devOne[6], '');
+ck('所有主材行项目特征为空', capRows.filter(function (r) { return r[9] === '子目下设备'; }).every(function (r) { return r[11] === ''; }), true);
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
