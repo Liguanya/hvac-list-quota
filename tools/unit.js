@@ -875,5 +875,26 @@ var sysCats = sysRows.map(function (x) { return x.category; });
 ck('给水支架紧跟给水管道', sysCats[sysCats.indexOf('bracket') - 1], 'galv');
 ck('中水支架在中水管道之后、阀门之前', sysCats.indexOf('bracket', sysCats.indexOf('bracket') + 1) < sysCats.indexOf('waterValve'), true);
 
+console.log('\n== 12位清单编码（同码递增、异码各自001）==');
+global.XLSX = {
+  utils: {
+    aoa_to_sheet: function (d) { return d; },
+    book_new: function () { return {}; },
+    book_append_sheet: function (wb, ws) { wb.__rows = ws; }
+  },
+  writeFile: function (wb, name) { if (/建经/.test(name)) capJ = wb.__rows; else capG = wb.__rows; }
+};
+var capG = null, capJ = null;
+var c12 = A.parseRows([['序号','项目名称','数量'],[1,'单层百叶风口 800*400',4],[2,'单层百叶风口 800*400',6]]);
+A.exportGLD(c12);
+var lc12 = capG.filter(function (r) { return r[9] === '清单行'; }).map(function (r) { return r[8]; });
+ck('编码均为12位', lc12.every(function (c) { return /^\d{12}$/.test(c); }), true);
+var g12 = {};
+lc12.forEach(function (c) { var p = c.slice(0, 9); (g12[p] = g12[p] || []).push(c.slice(9)); });
+var dup12 = Object.keys(g12).filter(function (k) { return g12[k].length > 1; });
+ck('存在同码重复项', dup12.length > 0, true);
+ck('同码后缀001/002', dup12.length ? g12[dup12[0]].join(',') : '', '001,002');
+ck('首条后缀001', lc12[0].slice(9), '001');
+
 console.log('\n' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

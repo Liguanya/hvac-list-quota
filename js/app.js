@@ -2455,6 +2455,7 @@
   }
 
   function renderTable(data) {
+    annotateListCode12(data);
     var tb = document.getElementById('tableBody');
     if (!tb) return;
     var html = '';
@@ -2463,7 +2464,7 @@
       it._i = i;
       html += '<tr class="' + (it.warn ? 'row-warn' : '') + '">'
         + '<td>' + esc(it.index) + '</td>'
-        + '<td class="cell-qcode">' + esc(it.listCode) + '</td>'
+        + '<td class="cell-qcode">' + esc(it.listCode12 || it.listCode) + '</td>'
         + '<td class="cell-name">' + esc(it.name) + '</td>'
         + '<td class="cell-type">' + layCell(it) + '</td>'
         + '<td class="cell-spec">' + esc(specText(it)) + '</td>'
@@ -2539,7 +2540,20 @@
   function num2(v) { return (v === null || v === undefined) ? '' : +Number(v).toFixed(2); }
   function round4(v) { return (v === null || v === undefined || isNaN(v)) ? '' : Math.round(Number(v) * 10000) / 10000; }
 
+  // 清单编码补足 12 位：同一 9 位清单编码按清单出现顺序追加 001/002/003…；
+  // 不同 9 位编码各自从 001 起。非 9 位纯数字编码（如补充码 03B001）保持原样。
+  function annotateListCode12(data) {
+    var seq = {};
+    data.forEach(function (it) {
+      var c = it.listCode || '';
+      if (!/^\d{9}$/.test(c)) { it.listCode12 = c; return; }
+      seq[c] = (seq[c] || 0) + 1;
+      it.listCode12 = c + ('00' + seq[c]).slice(-3);
+    });
+  }
+
   function exportGLD(data) {
+    annotateListCode12(data);
     var rows = [];
     rows.push(['序号', '项目名称', '类型', '参数', '品牌参考', '规格', '规格补充', '工程量',
       '项目编码', '类型', '名称', '项目特征', '单位', '工程量', '主材单价']);
@@ -2557,7 +2571,7 @@
       var sub = 0;
       // 清单行
       rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
-        it.listCode, '清单行', it.name, it.features, it.unit, it.quantity,
+        it.listCode12 || it.listCode, '清单行', it.name, it.features, it.unit, it.quantity,
         it.price === null ? '' : num2(it.price)]);
       // 定额行
       // 定额行：必须带「单位 + 工程量」，否则广联达导入时会把定额行识别成一级分部行，
@@ -2589,14 +2603,15 @@
   }
 
   function exportJianjing(data) {
+    annotateListCode12(data);
     var rows = [];
     rows.push(['序号', '项目编码', '项目名称', '项目特征', '单位', '工程量', '定额编码', '定额名称', '主材单价']);
     data.forEach(function (it) {
       var nm = it.category === 'transport' ? it.name : (it.name + '（' + it.categoryLabel + '）');
-      rows.push([it.index, it.listCode, nm, it.features, it.unit, it.quantity,
+      rows.push([it.index, it.listCode12 || it.listCode, nm, it.features, it.unit, it.quantity,
         it.quotaCode || '', it.quotaName || '（待人工处理）', it.price === null ? '' : num2(it.price)]);
       (it.extras || []).forEach(function (x) {
-        rows.push([it.index, it.listCode, nm, '', it.unit, it.quantity, x.code, x.name, '']);
+        rows.push([it.index, it.listCode12 || it.listCode, nm, '', it.unit, it.quantity, x.code, x.name, '']);
       });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
