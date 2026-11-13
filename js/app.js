@@ -2377,6 +2377,7 @@
     var hasAuto = false;
     for (var q = 0; q < out.length; q++) if (out[q].autoAdded) hasAuto = true;
     if (hasAuto) for (var q2 = 0; q2 < out.length; q2++) out[q2].index = String(q2 + 1);
+    dbApplyAll(out);   // 价格数据库兜底（信息价不动，市场价/待询价按库价覆盖）
     return out;
   }
 
@@ -2400,7 +2401,7 @@
         (it.warn ? '；' + it.warn : '');
     }
   }
-  function recomputePrice(it) {
+  function recomputePriceCore(it) {
     var info = lookupPrice(it);
     if (info && info.price !== null) {
       it.price = info.price; it.priceSource = info.source; it.priceBasis = info.basis || '';
@@ -2411,6 +2412,96 @@
       it.priceBasis = '';
     }
   }
+
+  // ============================================================
+  // 价格数据库联动：信息价 > 数据库价 > 市场价
+  // 数据源为门户「价格数据库」写入的 localStorage（同源共享，键 priceDB.v1）
+  // ============================================================
+  var DB_PROF = 'hvac';
+  var DB_MIN_SCORE = 12;                                  // 匹配阈值，低于此分不采用
+  var DB_OVERRIDE = ['market', 'pending', 'manual', 'estimated'];
+  var _dbPool = null, _dbHit = {}, _dbPoolDB = null, _dbPoolRaw = null;
+
+  function dbLib() { return (typeof window !== 'undefined' && window.PriceDB) ? window.PriceDB : null; }
+  function dbRefresh() { _dbPool = null; _dbPoolDB = null; _dbPoolRaw = null; _dbHit = {}; }
+
+  function dbPool() {
+    var cur = dbLib();
+    // 直接读同源 localStorage（键 priceDB.v1），不依赖库内部存储实现
+    var raw = null;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) raw = window.localStorage.getItem('priceDB.v1');
+    } catch (e) { raw = null; }
+    if (_dbPool && _dbPoolDB === cur && _dbPoolRaw === raw) return _dbPool;   // 数据未变，复用快照
+    _dbPoolDB = cur; _dbPoolRaw = raw; _dbHit = {};                          // 数据变了，命中缓存作废
+    if (!cur) { _dbPool = []; return _dbPool; }
+    var items = [];
+    if (raw) { try { var d = JSON.parse(raw); items = (d && d.items) || []; } catch (e2) { items = []; } }
+    _dbPool = items.filter(function (x) { return x && x.prof === DB_PROF; });
+    return _dbPool;
+  }
+
+  // 单条名称查询（结果按名称缓存，一次组价只打分一次）
+  function dbHitOf(name) {
+    var key = String(name === null || name === undefined ? '' : name).trim();
+    if (!key) return null;
+    var pool = dbPool();   // 每次都同步数据快照（内容未变时开销极小）
+    if (Object.prototype.hasOwnProperty.call(_dbHit, key)) return _dbHit[key];
+    var DB = dbLib(), best = null, bestScore = 0;
+    if (DB && pool.length && DB.feat && DB.scoreF) {
+      var qf = DB.feat(key);
+      for (var i = 0; i < pool.length; i++) {
+        var s = DB.scoreF(qf, DB.feat(pool[i].name));
+        if (s <= 0) continue;
+        if (s > bestScore || (s === bestScore && best && String(pool[i].date) > String(best.date))) { bestScore = s; best = pool[i]; }
+      }
+    }
+    var res = (best && bestScore >= DB_MIN_SCORE) ? { item: best, score: bestScore } : null;
+    _dbHit[key] = res;
+    return res;
+  }
+
+  // 数据库兜底：仅当当前价为市场价/待询价/需人工/估算价时覆盖，信息价永不动
+  function dbPriceApply(it) {
+    if (!it || !it.name) return;
+    if (DB_OVERRIDE.indexOf(it.priceSource) < 0) return;
+    var hit = dbHitOf(it.name);
+    if (!hit) return;
+    var p = Number(hit.item.price);
+    if (!isFinite(p) || p <= 0) return;
+    it.price = p;
+    it.priceSource = 'db';
+    it.priceBrand = hit.item.brand || '';
+    it.priceBasis = '价格数据库：' + (hit.item.brand || '未标品牌') + ' ¥' + p.toFixed(2) +
+      (hit.item.date ? '（报价 ' + hit.item.date + '）' : '');
+  }
+
+  // 批量补价（数据变动后重新组价时调用）
+  function dbApplyAll(items) {
+    dbRefresh();
+    (items || []).forEach(dbPriceApply);
+  }
+
+  if (typeof window !== 'undefined') window.__priceDbRefresh = dbRefresh;   // 数据变更后手动刷新
+
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('storage', function (e) {
+      if (!e || e.key === null || e.key === 'priceDB.v1') dbRefresh();
+    });
+    // 门户价格库页面可能先写入再跳转，页面可见时刷新一次快照
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') dbRefresh();
+      });
+    }
+  }
+
+  var _recomputePriceCore = recomputePriceCore;
+  function recomputePrice(it, periodKey) {
+    _recomputePriceCore(it, periodKey);
+    dbPriceApply(it);
+  }
+
 
   // ============================================================
   // 渲染
@@ -2429,7 +2520,10 @@
         return '<span class="price-brand" title="' + esc(brand) + '">' + esc(b) + '</span>';
       }).join('');
     }
-    return '<span class="tag ' + (isInfo ? 'tag-info' : 'tag-market') + '" ' + tip + '>' + (isInfo ? '信息价' : '市场价') + '</span> <span ' + tip + '>¥' + item.price.toFixed(2) + '</span>' + brandHtml;
+    var isDb = item.priceSource === 'db';
+    var tagCls = isInfo ? 'tag-info' : (isDb ? 'tag-db' : 'tag-market');
+    var tagTxt = isInfo ? '信息价' : (isDb ? '数据库价' : '市场价');
+    return '<span class="tag ' + tagCls + '" ' + tip + '>' + tagTxt + '</span> <span ' + tip + '>¥' + item.price.toFixed(2) + '</span>' + brandHtml;
   }
   function inferTag(it) {
     return it.codeInferred ? '<span class="tag tag-infer" title="定额编号为区间内按风量/周长/直径就近推算，请对照第九册子目表核对">推</span>' : '';
