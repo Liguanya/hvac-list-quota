@@ -2649,7 +2649,7 @@
         : (it.perimeter ? ('周长' + it.perimeter + 'mm') : '');
       var sub = 0;
       rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
-        it.quotaCode || '', '定额行', it.quotaName || '（待人工处理）', it.quotaUnit || it.unit,
+        it.quotaCode || '', '定额行', it.name, it.quotaUnit || it.unit,
         round4(it.quantity / (it.quotaFactor || 1)), '']);
       if (it.priceSource !== 'none') {
         zIdx++;
