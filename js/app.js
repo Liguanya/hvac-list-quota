@@ -7,6 +7,12 @@
 (function () {
   'use strict';
 
+  // ---------- 概算模式 ----------
+  // 概算计价不套清单编码、不生成项目特征：URL 带 ?mode=gs 时启用。
+  // 界面隐藏「清单编码」列；广联达导出删清单行与项目特征列；
+  // 建经导出删清单编码列与项目特征列。无该参数（预算模式）时行为完全不变。
+  var GS_MODE = /[?&]mode=gs(?:&|$)/.test((typeof location !== 'undefined' && location.search) || '');
+
   var P = (typeof window !== 'undefined' && window.HVAC_PRICES) ? window.HVAC_PRICES
     : (typeof require !== 'undefined' ? require('../data/prices.js') : {});
   // 管道模块：与给排水站同一套清单/定额/主材价口径（031001001~008 + 第八册）
@@ -2464,7 +2470,7 @@
       it._i = i;
       html += '<tr class="' + (it.warn ? 'row-warn' : '') + '">'
         + '<td>' + esc(it.index) + '</td>'
-        + '<td class="cell-qcode">' + esc(it.listCode12 || it.listCode) + '</td>'
+        + '<td class="cell-qcode col-lc">' + esc(it.listCode12 || it.listCode) + '</td>'
         + '<td class="cell-name">' + esc(it.name) + '</td>'
         + '<td class="cell-type">' + layCell(it) + '</td>'
         + '<td class="cell-spec">' + esc(specText(it)) + '</td>'
@@ -2555,6 +2561,7 @@
   }
 
   function exportGLD(data) {
+    if (GS_MODE) return exportGLDGs(data);
     annotateListCode12(data);
     var rows = [];
     rows.push(['序号', '项目名称', '类型', '参数', '品牌参考', '规格', '规格补充', '工程量',
@@ -2605,6 +2612,7 @@
   }
 
   function exportJianjing(data) {
+    if (GS_MODE) return exportJianjingGs(data);
     annotateListCode12(data);
     var rows = [];
     rows.push(['序号', '项目编码', '项目名称', '项目特征', '单位', '工程量', '定额编码', '定额名称', '主材单价']);
@@ -2621,6 +2629,65 @@
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '建经组价');
     XLSX.writeFile(wb, '暖通专业智能组价_建经_' + stamp() + '.xlsx');
+  }
+
+  // 概算模式广联达导出：删除清单行（清单编码整行）与「项目特征」整列，其余列顺序不变。
+  // 每条项目以定额行为首行（A 列序号、B 列项目名称），主材/附加定额依次 1.1、1.2……
+  function exportGLDGs(data) {
+    var rows = [];
+    rows.push(['序号', '项目名称', '类型', '参数', '品牌参考', '规格', '规格补充', '工程量',
+      '项目编码', '类型', '名称', '单位', '工程量', '主材单价']);
+    var zIdx = 0;
+    data.forEach(function (it) {
+      var d = it.dim;
+      var param = it.airVolume ? (it.airVolume + 'm³/h') : '';
+      var dimStr = '';
+      if (d.diameter) dimStr = 'φ' + d.diameter;
+      else if (d.length && d.width) dimStr = d.length + '×' + d.width + (d.height ? '×' + d.height : '');
+      if (isDuctCat(it.category) && it.mergedCount) dimStr = ductTierLabel(it);
+      var sup = it.category === 'plenum' ? (it.plenumArea ? ('截面积' + it.plenumArea + '㎡') : '')
+        : (it.perimeter ? ('周长' + it.perimeter + 'mm') : '');
+      var sub = 0;
+      rows.push([it.index, it.name, it.categoryLabel, param, it.brand || '', dimStr, sup, it.quantity,
+        it.quotaCode || '', '定额行', it.quotaName || '（待人工处理）', it.quotaUnit || it.unit,
+        round4(it.quantity / (it.quotaFactor || 1)), '']);
+      if (it.priceSource !== 'none') {
+        zIdx++;
+        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
+          'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.name, it.unit, it.quantity,
+          it.price === null ? '' : num2(it.price)]);
+      }
+      (it.extras || []).forEach(function (x) {
+        rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name,
+          x.unit || it.unit, round4((x.qty || 0) / (x.factor || 1)), '']);
+      });
+    });
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 10 },
+      { wch: 14 }, { wch: 10 }, { wch: 34 }, { wch: 6 }, { wch: 10 }, { wch: 12 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '定额报价表');
+    XLSX.writeFile(wb, '概算_暖通专业定额报价表_广联达_' + stamp() + '.xlsx');
+  }
+
+  // 概算模式建经导出：删除「项目编码」「项目特征」两列，其余列与预算模式一致
+  function exportJianjingGs(data) {
+    annotateListCode12(data);
+    var rows = [];
+    rows.push(['序号', '项目名称', '单位', '工程量', '定额编码', '定额名称', '主材单价']);
+    data.forEach(function (it) {
+      var nm = it.category === 'transport' ? it.name : (it.name + '（' + it.categoryLabel + '）');
+      rows.push([it.index, nm, it.unit, it.quantity, it.quotaCode || '', it.quotaName || '（待人工处理）',
+        it.price === null ? '' : num2(it.price)]);
+      (it.extras || []).forEach(function (x) {
+        rows.push([it.index, nm, it.unit, it.quantity, x.code, x.name, '']);
+      });
+    });
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 6 }, { wch: 30 }, { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 34 }, { wch: 12 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '定额报价表');
+    XLSX.writeFile(wb, '概算_暖通专业定额报价表_建经_' + stamp() + '.xlsx');
   }
 
   function stamp() {
@@ -2686,6 +2753,18 @@
   }
 
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', function () {
+    if (GS_MODE) {
+      document.body.classList.add('gs-mode');
+      var h1 = document.querySelector('.header h1');
+      if (h1) h1.textContent = h1.textContent.replace('智能组价系统', '概算组价系统').replace('智能组价平台', '概算组价平台');
+      var hd = document.querySelector('.header p');
+      if (hd) hd.textContent = '概算计价：不套清单编码、不生成项目特征，按项目名称直接套用定额与主材 · 主材价优先信息价、其次市场价 · 全部本地计算';
+      var tip = document.createElement('div');
+      tip.className = 'gs-tip';
+      tip.innerHTML = '📌 <b>概算模式</b>　不套用清单编码与项目特征：广联达导出已删除清单行与项目特征列，建经导出已删除清单编码列与项目特征列；主材价优先取天津市信息价，缺项按市场价。';
+      var content = document.querySelector('.content');
+      if (content) content.insertBefore(tip, content.firstChild);
+    }
     var fileInput = document.getElementById('excelFile');
     var uploadArea = document.getElementById('uploadArea');
 
@@ -2833,6 +2912,7 @@
       DUCT_FRP_ROUND: DUCT_FRP_ROUND, DUCT_FRP_RECT: DUCT_FRP_RECT, DUCT_COMP_ROUND: DUCT_COMP_ROUND,
       DUCT_COMP_RECT: DUCT_COMP_RECT, DUCT_FLEX_TIERS: DUCT_FLEX_TIERS, generateFeature: generateFeature,
       buildWarn: buildWarn, exportGLD: exportGLD, exportJianjing: exportJianjing,
+      exportGLDGs: exportGLDGs, exportJianjingGs: exportJianjingGs,
       CHILLER_TIERS: CHILLER_TIERS, HEATPUMP_TIERS: HEATPUMP_TIERS, TOWER_TIERS: TOWER_TIERS,
       parseChillerType: parseChillerType, parseWaterFlow: parseWaterFlow, equipPrice: equipPrice,
       typeLabel: typeLabel, PIPE: PIPE,
