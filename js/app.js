@@ -19,6 +19,28 @@
   var PIPE = (typeof window !== 'undefined' && window.HVAC_PIPE) ? window.HVAC_PIPE
     : (typeof require !== 'undefined' ? require('./pipes.js') : null);
 
+  // 补充规则（水表/水锤/水箱/套管/泵等）的清单计量单位
+  var SPECIAL_UNIT = {
+    waterMeter: '个', waterHammer: '个', sensor: '台', uvLamp: '台', waterTank: '台',
+    bellMouth: '个', vacuumBreaker: '个', backflow: '个', washSink: '组', sewageSink: '组',
+    pressureTank: '台', manifold: '台', pump: '台', flexSleeve: '个', rigidSleeve: '个',
+    steelSleeve: '个', emergencyShower: '组', heaterElec: '台', boilerElec: '台',
+    floorCleanout: '个', fireRing: '个', levelGauge: '台', pressGauge: '台',
+    pressGaugeElec: '台', flexJoint: '个', preInsul: 'm', ppDrain: 'm'
+  };
+  // 管道 / 补充规则类别统一走管道模块（第八册 + 补充规则）
+  function isPipeOrSpecial(cat) {
+    return !!(PIPE && (PIPE.LIST[cat] || (PIPE.isSpecialCat && PIPE.isSpecialCat(cat))));
+  }
+  // 附加定额自带主材（泵控制柜、焊接钢管等）金额合计
+  function extraMatAmt(d) {
+    var sum = 0;
+    ((d && d.extras) || []).forEach(function (x) {
+      if (x && x.mat && x.mat.price) sum += x.mat.price * (x.qty || 0);
+    });
+    return sum;
+  }
+
   // ============================================================
   // 清单编码（天津2025清单计价规范 附录D 通风空调工程）
   // ============================================================
@@ -1127,6 +1149,25 @@
       it.unit = pi.unit || 'm';
       it.brand = PIPE.brandOf(it) || '';
     }
+    // 补充规则（水表/水锤/水箱/套管/泵/洁具/阻火圈等）：整段交给共享模块解析
+    if (PIPE && PIPE.isSpecialCat && PIPE.isSpecialCat(category)) {
+      var si = PIPE.buildItem(name);
+      it.special = true;
+      it.listCode = si.listCode;
+      it.listName = si.listName;
+      it.categoryLabel = si.listName;
+      it.unit = si.unit || '台';
+      it.brand = '';
+      if (si.dn) it.dn = si.dn;
+      if (si.tankVol) it.tankVol = si.tankVol;
+      if (si.tankArea) it.tankArea = si.tankArea;
+      if (si.tankDim) it.tankDim = si.tankDim;
+      if (si.tankVolL) it.tankVolL = si.tankVolL;
+      if (si.pumpKw) it.pumpKw = si.pumpKw;
+      if (si.meterRemote) it.meterRemote = si.meterRemote;
+      if (si.specialOpt) it.specialOpt = si.specialOpt;
+      if (si.warn) it.specialWarn = si.warn;
+    }
     if (category === 'fan') {
       var ft = parseFanType(name);
       it.sub = ft || 'axial';
@@ -1312,7 +1353,7 @@
       return { code: '9-35', name: '弯头导流叶片制作、安装', inferred: false, keepList: true, unit: 'm²' };
     }
     // 管道：交给管道模块（第八册）
-    if (PIPE && PIPE.LIST[it.category]) return PIPE.matchQuota(it);
+    if (isPipeOrSpecial(it.category)) return PIPE.matchQuota(it);
 
     if (it.category === 'fan') {
       if (it.isToiletFan) {
@@ -1622,7 +1663,7 @@
         basis: '市场价（' + gv.brand + '）：弯头导流叶片成品 ' + gv.unit + '元/㎡（含下料、咬口成型）；如按钢板材料价计为' + gv.mat + '元/㎡（δ1.0×7.85kg/㎡×4.20元/kg）'
       };
     }
-    if (PIPE && PIPE.LIST[it.category]) {
+    if (isPipeOrSpecial(it.category)) {
       var pq = PIPE.lookupPrice(it, currentPeriod());
       if (pq) return pq;
       return { price: null, source: 'pending', basis: '' };
@@ -1965,7 +2006,7 @@
     if (it.category === 'bracket') w.push('管道支架工程量按管道长度估算（0.45~3.2kg/m，按管径分档），请按图纸支架实际重量调整');
     if (it.category === 'insulRubber') w.push('橡塑保温按保温体积（m³）计，厚度按30mm 取定；若按管道长度计量请在单位列填 m、按面积填 m²，将自动折算体积');
     if (it.category === 'insulGlass') w.push('离心玻璃棉按保温体积（m³）计，厚度按定额40mm（面积×0.04）；若按风管面积计量请在单位列填 m²');
-    if (PIPE && PIPE.LIST[it.category]) {
+    if (isPipeOrSpecial(it.category)) {
       var pw = PIPE.buildWarn(it, quota);
       if (pw) w.push(pw);
     }
@@ -2058,7 +2099,7 @@
     if (it.category === 'bracket') return '管道支吊架（型钢制作安装）';
     if (it.category === 'insulRubber') return '橡塑保温壳 δ30mm' + (it.dn ? ' 管道DN' + it.dn : '');
     if (it.category === 'insulGlass') return '带铝箔离心玻璃棉 δ40mm' + (it.dn ? ' 管道DN' + it.dn : '');
-    if (PIPE && PIPE.LIST[it.category]) return PIPE.specCell(it) || '管径待识别';
+    if (isPipeOrSpecial(it.category)) return PIPE.specCell(it) || '规格待识别';
     // 风管类：合并行显示定额档规格；未合并显示实际尺寸 + 板厚/壁厚
     if (isDuctCat(it.category)) {
       if (it.mergedSpec) return it.mergedSpec;
@@ -2095,7 +2136,7 @@
     if (it.category === 'bracket') return '支/吊架、基础型钢';
     if (it.category === 'insulRubber') return '橡塑保温壳安装';
     if (it.category === 'insulGlass') return '带铝箔离心玻璃棉安装';
-    if (PIPE && PIPE.LIST[it.category]) {
+    if (isPipeOrSpecial(it.category)) {
       if (PIPE.typeLabel) { var _tl = PIPE.typeLabel(it); if (_tl) return _tl; }
       return (it.loc === 'out' ? '室外' : '室内') + ' ' + (PIPE.JOINT_CN2[it.joint] || PIPE.JOINT_CN[it.joint] || '');
     }
@@ -2111,7 +2152,7 @@
       if (val === null || val === undefined || val === '') return;
       lines.push((lines.length + 1) + '.' + label + '：' + val);
     };
-    if (PIPE && PIPE.LIST[it.category]) {
+    if (isPipeOrSpecial(it.category)) {
       push('名称', it.name);
       push('规格型号', PIPE.specCell(it) || '待识别');
       // 管道特征按"部位/材质/连接形式/介质/试压冲洗"拆成独立条目
@@ -2292,7 +2333,7 @@
       else if (it.category === 'guideVane') defUnit = 'm²';
       else if (it.category === 'ductFlex') defUnit = (it.sub === 'interface' ? 'm²' : 'm');
       else if (PIPE && PIPE.isSpecialCat && PIPE.isSpecialCat(it.category)) {
-        defUnit = ({ levelGauge: '台', pressGauge: '台', pressGaugeElec: '台', flexJoint: '个' })[it.category] || 'm';
+        defUnit = SPECIAL_UNIT[it.category] || it.unit || 'm';
       }
       else if (PIPE && PIPE.LIST[it.category]) defUnit = 'm';
       else if (isDuctCat(it.category)) defUnit = 'm²';
@@ -2355,7 +2396,7 @@
       it.quotaFactor = quota.factor || 1;
       it.codeInferred = !!quota.inferred;
       it.supp = !!quota.supp;
-      if (PIPE && PIPE.LIST[it.category]) it.extras = PIPE.buildExtraQuotas(it, quota);
+      if (PIPE && (PIPE.LIST[it.category] || (PIPE.isSpecialCat && PIPE.isSpecialCat(it.category)))) it.extras = PIPE.buildExtraQuotas(it, quota);
       it.warn = buildWarn(it, quota);
       if (it.qtyWarn) it.warn = (it.warn ? it.warn + '；' : '') + '工程量缺失，暂按1' + it.unit + '计请核对';
       if (it.category === 'guideVane') {
@@ -2398,7 +2439,7 @@
     it.quotaUnit = q.unit || it.unit;
     it.quotaFactor = q.factor || 1;
     it.codeInferred = !!q.inferred;
-    if (PIPE && PIPE.LIST[it.category]) { it.extras = PIPE.buildExtraQuotas(it, q); it.brand = PIPE.brandOf(it) || it.brand; }
+    if (PIPE && (PIPE.LIST[it.category] || (PIPE.isSpecialCat && PIPE.isSpecialCat(it.category)))) { it.extras = PIPE.buildExtraQuotas(it, q); it.brand = PIPE.brandOf(it) || it.brand; }
     it.warn = buildWarn(it, q);
     if (it.qtyWarn) it.warn = (it.warn ? it.warn + '；' : '') + '工程量缺失，暂按1' + it.unit + '计请核对';
     if (isDuctCat(it.category) && it.mergedCount) {
@@ -2551,6 +2592,12 @@
   }
 
   function layCell(it) {
+    if (PIPE && PIPE.isSpecialCat && PIPE.isSpecialCat(it.category)) {
+      if (PIPE.hasOpts(it)) {
+        return sel('spopt', it._i, PIPE.opts(it).map(function (x) { return opt(x.k, it.specialOpt, x.l); }).join(''));
+      }
+      return '<span class="lay-static">—</span>';
+    }
     if (PIPE && PIPE.LIST[it.category]) {
       var locHtml = opt('in', it.loc, '室内') + opt('out', it.loc, '室外');
       var js = PIPE.jointsOf(it);
@@ -2604,7 +2651,7 @@
       else if (d.category === 'silencer' || d.category === 'plenum' || d.category === 'insulRubber' || d.category === 'insulGlass') other++;
       else dev++;
       if (PRICED_CATS[d.category] && d.price === null && d.priceSource !== 'none') pending++;
-      if (d.price !== null && d.price !== undefined) total += (d.price + (d.mat2 && d.mat2.price ? d.mat2.price : 0)) * d.quantity;
+      if (d.price !== null && d.price !== undefined) total += (d.price + (d.mat2 && d.mat2.price ? d.mat2.price : 0)) * d.quantity + extraMatAmt(d);
     }
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
     set('totalCount', n);
@@ -2635,6 +2682,7 @@
         reprice = true;
       }
       if (act === 'pjoint') { it.joint = s.value; it.jointFromName = true; it.jointFallback = null; reprice = true; }
+      if (act === 'spopt') { PIPE.setOpt(it, s.value); reprice = true; }
       if (reprice) {
         recomputeQuota(it);
         recomputePrice(it);
@@ -2712,6 +2760,12 @@
       (it.extras || []).forEach(function (x) {
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name, '',
           x.unit || it.unit, round4((x.qty || 0) / (x.factor || 1)), '']);
+        if (x.mat) {
+          zIdx++;
+          rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
+            'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', x.mat.name, '',
+            x.unit || it.unit, round4((x.qty || 0) / (x.factor || 1)), num2(x.mat.price)]);
+        }
       });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
@@ -2737,6 +2791,10 @@
       }
       (it.extras || []).forEach(function (x) {
         rows.push([it.index, it.listCode12 || it.listCode, nm, '', it.unit, it.quantity, x.code, x.name, '']);
+        if (x.mat) {
+          rows.push([it.index, it.listCode12 || it.listCode, x.mat.name, '（附加定额主材）', x.unit || it.unit,
+            round4((x.qty || 0) / (x.factor || 1)), '', '', num2(x.mat.price)]);
+        }
       });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
@@ -2781,6 +2839,12 @@
       (it.extras || []).forEach(function (x) {
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name,
           x.unit || it.unit, round4((x.qty || 0) / (x.factor || 1)), '']);
+        if (x.mat) {
+          zIdx++;
+          rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
+            'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', x.mat.name,
+            x.unit || it.unit, round4((x.qty || 0) / (x.factor || 1)), num2(x.mat.price)]);
+        }
       });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
@@ -2805,6 +2869,10 @@
       }
       (it.extras || []).forEach(function (x) {
         rows.push([it.index, nm, it.unit, it.quantity, x.code, x.name, '']);
+        if (x.mat) {
+          rows.push([it.index, x.mat.name, x.unit || it.unit, round4((x.qty || 0) / (x.factor || 1)),
+            '', '（附加定额主材）', num2(x.mat.price)]);
+        }
       });
     });
     var ws = XLSX.utils.aoa_to_sheet(rows);
