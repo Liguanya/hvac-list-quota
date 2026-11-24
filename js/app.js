@@ -2556,7 +2556,7 @@
   // 渲染
   // ============================================================
   function priceText(item) {
-    if (!PRICED_CATS[item.category]) return '<span class="tag tag-na">未计价</span>';
+    if (!PRICED_CATS[item.category] && !(item.special === true && item.price !== null && item.price !== undefined)) return '<span class="tag tag-na">未计价</span>';
     if (item.priceSource === 'none') return '<span class="tag tag-na">无主材</span>';
     if (item.price === null) return '<span class="tag tag-pending">待询价</span>';
     var tip = item.priceBasis ? ' title="' + String(item.priceBasis).replace(/"/g, '&quot;') + '"' : '';
@@ -2627,7 +2627,7 @@
         + '<td class="cell-spec">' + esc(specText(it)) + '</td>'
         + '<td class="cell-brand" title="' + esc(it.brand || '') + '">' + esc(brandShort(it.brand)) + '</td>'
         + '<td class="cell-qcode">' + esc(it.quotaCode || '—') + inferTag(it) + '</td>'
-        + '<td class="cell-qname">' + esc(it.quotaName || '待人工处理') + '</td>'
+        + '<td class="cell-qname">' + esc((it.quotaName || '待人工处理') + (it.extras && it.extras.length ? ' ＋' + it.extras.map(function (x) { return x.code + ' ' + x.name; }).join('；') : '')) + '</td>'
         + '<td class="cell-price">' + priceText(it) + '</td>'
         + '<td>' + esc(it.unit) + '</td>'
         + '<td>' + it.quantity + '</td>'
@@ -2650,7 +2650,7 @@
         d.category === 'flushValve' || d.category === 'solenoidValve') ovo++;
       else if (d.category === 'silencer' || d.category === 'plenum' || d.category === 'insulRubber' || d.category === 'insulGlass') other++;
       else dev++;
-      if (PRICED_CATS[d.category] && d.price === null && d.priceSource !== 'none') pending++;
+      if ((PRICED_CATS[d.category] || d.special === true) && d.price === null && d.priceSource !== 'none') pending++;
       if (d.price !== null && d.price !== undefined) total += (d.price + (d.mat2 && d.mat2.price ? d.mat2.price : 0)) * d.quantity + extraMatAmt(d);
     }
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
