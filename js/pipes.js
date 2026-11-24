@@ -20,7 +20,14 @@
     copper: { code: '031001005', name: '铜管' },
     stainless: { code: '031001006', name: '不锈钢管' },
     composite: { code: '031001007', name: '复合管' },
-    plastic: { code: '031001008', name: '塑料管' }
+    plastic: { code: '031001008', name: '塑料管' },
+    // 补充规则（2026-11-24 主人指定口径）
+    preInsul: { code: '030801020', name: '低压直埋保温管道' },
+    ppDrain: { code: '031001008', name: '塑料管' },
+    levelGauge: { code: '031002001', name: '金属阀门' },
+    pressGauge: { code: '030601002', name: '压力仪表' },
+    pressGaugeElec: { code: '030601002', name: '压力仪表' },
+    flexJoint: { code: '031002008', name: '软接头（软管）' }
   };
 
   // 沟槽管件 8-220~ / 管道消毒冲洗 8-490~
@@ -117,7 +124,9 @@
   var MEDIUM_CN = { water: '给水', drain: '排水', gas: '燃气' };
   var CAT_LABEL = {
     castIron: '铸铁管', galv: '镀锌钢管', seamless: '无缝钢管', welded: '焊接钢管',
-    copper: '铜管', stainless: '不锈钢管', composite: '复合管', plastic: '塑料管'
+    copper: '铜管', stainless: '不锈钢管', composite: '复合管', plastic: '塑料管',
+    preInsul: '直埋保温管', ppDrain: 'PP排水管', levelGauge: '液位计',
+    pressGauge: '压力表', pressGaugeElec: '电接点压力表', flexJoint: '软接头'
   };
   var CAT_WORK = {
     castIron: '管道切管、套丝/承插、接口、管道安装、水压试验',
@@ -127,7 +136,13 @@
     copper: '管道切管、连接、管件安装、管道安装、水压试验',
     stainless: '管道切管、连接、管件安装、管道安装、水压试验',
     composite: '管道切管、连接、管件安装、管道安装、水压试验',
-    plastic: '管道切管、热熔/粘接、管件安装、管道安装、灌水试验'
+    plastic: '管道切管、热熔/粘接、管件安装、管道安装、灌水试验',
+    preInsul: '管道切管、坡口、焊接、接口保温、管道安装、水压试验、冲洗',
+    ppDrain: '管道切管、粘接、管件安装、管道安装、灌水试验、通球试验',
+    levelGauge: '仪表安装、接线、调试',
+    pressGauge: '仪表安装、校验',
+    pressGaugeElec: '仪表安装、接线、校验',
+    flexJoint: '软接头安装、试压'
   };
 
   function ruleTable(it) { return it && it.category === 'galv' ? GALV : CAST_IRON; }
@@ -245,9 +260,33 @@
   var MAT_CAT = { '无缝钢': 'seamless', '焊接钢': 'welded', '铜': 'copper', '不锈钢': 'stainless', '复合': 'composite', '塑料': 'plastic' };
 
   // ---------- 名称识别：是否属于"管道"（并排除风管/风道）----------
+  // 补充规则类别（2026-11-24）：直埋保温管 / PP排水管 / 液位计 / 压力表 / 软接头
+  function classifySpecial(name) {
+    if (!name) return '';
+    var n = String(name);
+    if (/电接点压力表/.test(n)) return 'pressGaugeElec';
+    if (/压力表|真空表/.test(n)) return 'pressGauge';
+    if (/液位计/.test(n)) return 'levelGauge';
+    if (/可曲挠|橡胶软接头|软接头|软管接头/.test(n)) {
+      // 风管软接头（帆布/三防布/带规格尺寸）属风管，不归管道软接头
+      if (/帆布|三防布|复合布|钢丝撑筋|风管|风道|风阀/.test(n)) return '';
+      if (/[×xX*]\s*\d{2,3}/.test(n)) return '';
+      return 'flexJoint';
+    }
+    if (/直埋保温管|预制直埋保温|直埋预制保温|聚氨酯保温管/.test(n)) return 'preInsul';
+    if (/PP\s*排水|PP\s*静音|静音管|PP\s*管/i.test(n)) return 'ppDrain';
+    return '';
+  }
+  function isSpecialCat(cat) {
+    return cat === 'preInsul' || cat === 'ppDrain' || cat === 'levelGauge' ||
+      cat === 'pressGauge' || cat === 'pressGaugeElec' || cat === 'flexJoint';
+  }
+
   function classify(name) {
     if (!name) return null;
     var s = String(name);
+    var spc = classifySpecial(s);
+    if (spc) return spc;
     // 风管/风道不归管道
     if (/风管|风道|通风管道|软管|软接|法兰|支架|吊架|套管|保温|刷漆|除锈|水表|阀门|阀|泵|机组|末端|盘管|风口/.test(s)) return null;
     var mat = materialOf(s);
@@ -278,6 +317,32 @@
 
     var cat = classify(name);
     it.category = cat || 'other';
+    if (cat && isSpecialCat(cat)) {
+      it.special = true;
+      it.listCode = LIST[cat].code;
+      it.listName = LIST[cat].name;
+      it.categoryLabel = CAT_LABEL[cat];
+      it.joint = null;
+      if (cat === 'preInsul') {
+        it.unit = 'm'; it.material = '保温管'; it.loc = 'out'; it.medium = 'water';
+        it.locAmbiguous = false; it.mediumAmbiguous = false;
+      } else if (cat === 'ppDrain') {
+        it.unit = 'm'; it.material = '塑料'; it.loc = 'in'; it.medium = 'drain'; it.joint = 'glue';
+        it.isRain = /雨水/.test(name);
+        it.materialLabel = /静音/.test(name) ? 'PP排水静音管' : 'PP排水管';
+        it.locAmbiguous = false; it.mediumAmbiguous = false;
+      } else if (cat === 'flexJoint') {
+        it.unit = '个'; it.material = '橡胶'; it.loc = 'in'; it.medium = 'water';
+        it.joint = (it.dn > 0 && it.dn >= 50) ? 'flange' : 'thread';
+        it.materialLabel = '可曲挠橡胶软接头';
+        it.locAmbiguous = false; it.mediumAmbiguous = false;
+      } else {
+        it.unit = '台'; it.material = '仪表'; it.loc = 'in'; it.medium = 'water';
+        it.materialLabel = { levelGauge: '玻璃管（板）液位计', pressGauge: '压力表', pressGaugeElec: '电接点压力表' }[cat];
+        it.locAmbiguous = false; it.mediumAmbiguous = false;
+      }
+      return it;
+    }
     if (!cat) {
       it.listCode = '';
       it.listName = '';
@@ -340,9 +405,46 @@
     return hit;
   }
 
+  // ---------- 补充规则定额匹配（2026-11-24）----------
+  var PREINSUL_DNS = [32, 40, 50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400];
+  var PPDRAIN_DNS = [50, 75, 110, 160, 200, 250];
+  var FLEX_THREAD_DNS = [15, 20, 25, 32, 40];
+  var FLEX_FLANGE_DNS = [50, 65, 80, 100, 125, 150, 200, 250, 300, 350, 400];
+  function matchSpecialQuota(it) {
+    var c = it.category;
+    if (c === 'preInsul') {
+      if (!(it.dn > 0)) return { code: '', name: '室外管道 直埋式预制保温管（管径待识别）', inferred: false, needDn: true, keepList: true };
+      var t = tierOf(PREINSUL_DNS, it.dn);
+      return { code: '8-' + (141 + t.idx), name: '室外管道 直埋式预制保温管 公称直径' + t.dn + 'mm以内',
+        inferred: !t.exact, dnTier: t.dn, unit: '10m', factor: 10, keepList: true };
+    }
+    if (c === 'ppDrain') {
+      if (!(it.dn > 0)) return { code: '', name: '室内管道 塑料排水管（粘接）（管径待识别）', inferred: false, needDn: true, keepList: true };
+      var t2 = tierOf(PPDRAIN_DNS, it.dn);
+      return { code: '8-' + (377 + t2.idx), name: '室内管道 塑料排水管（粘接）公称外径' + t2.dn + 'mm以内',
+        inferred: !t2.exact, dnTier: t2.dn, unit: '10m', factor: 10, keepList: true };
+    }
+    if (c === 'levelGauge') return { code: '10-77', name: '物位检测仪表 直读玻璃管（板）液位计 管（板）长度1700mm以内', inferred: false, unit: '台', factor: 1, keepList: true };
+    if (c === 'pressGauge') return { code: '10-25', name: '压力仪表 压力表、真空表 就地', inferred: false, unit: '台', factor: 1, keepList: true };
+    if (c === 'pressGaugeElec') return { code: '10-31', name: '压力仪表 电接点压力表', inferred: false, unit: '台', factor: 1, keepList: true };
+    if (c === 'flexJoint') {
+      if (!(it.dn > 0)) return { code: '', name: '可曲挠橡胶软接头（管径待识别）', inferred: false, needDn: true, keepList: true };
+      if (it.dn < 50) {
+        var t3 = tierOf(FLEX_THREAD_DNS, it.dn);
+        return { code: '8-' + (812 + t3.idx), name: '橡胶软接头（螺纹连接）公称直径' + t3.dn + 'mm以内',
+          inferred: !t3.exact, dnTier: t3.dn, unit: '个', factor: 1, keepList: true };
+      }
+      var t4 = tierOf(FLEX_FLANGE_DNS, it.dn);
+      return { code: '8-' + (819 + t4.idx), name: '橡胶软接头（法兰连接）公称直径' + t4.dn + 'mm以内',
+        inferred: !t4.exact, dnTier: t4.dn, unit: '个', factor: 1, keepList: true };
+    }
+    return { code: '', name: '', inferred: false };
+  }
+
   // ---------- 定额匹配 ----------
   function matchQuota(it) {
     if (!it) return { code: '', name: '', inferred: false };
+    if (isSpecialCat(it.category)) return matchSpecialQuota(it);
     if (PIPE_GROUPS[it.category]) {
       var g = groupOf(it);
       if (!g) return { code: '', name: '', inferred: false };
@@ -380,6 +482,7 @@
   function buildExtraQuotas(it, quota) {
     var arr = [];
     if (!quota || !quota.code) return arr;
+    if (it && isSpecialCat(it.category)) return arr;   // 补充规则类别不计消毒冲洗/沟槽管件
     var tierDn = quota.dnTier || it.dn;
     if (it.joint === 'groove') {
       var f = tierOf(GROOVE_FITTING.dns, tierDn);
@@ -446,7 +549,62 @@
   function dnLabelOf(it) {
     return (it.category === 'plastic' || it.category === 'composite') ? 'De' : 'DN';
   }
+  // 直埋式预制保温管市场价（除税，元/m）
+  var PREINSUL_PRICE = { 32: 55, 40: 65, 50: 78, 65: 98, 80: 118, 100: 145, 125: 185,
+    150: 225, 200: 320, 250: 420, 300: 530, 350: 650, 400: 780 };
+  // PP 排水（静音）管价格体系（主人指定）：管道 + 管件双主材
+  var PP_PIPE_PRICE = { 50: 12.851, 75: 24.097, 100: 40.16, 150: 58.5 };
+  var PP_FIT_PRICE = { 50: 6.108, 75: 10.682, 100: 19.867, 150: 32.54 };
+  // 可曲挠橡胶软接头市场价（信息价缺项，除税，元/个）
+  var FLEX_JOINT_PRICE = { 15: 22, 20: 26, 25: 32, 32: 42, 40: 52, 50: 68, 65: 95, 80: 120,
+    100: 165, 125: 210, 150: 265, 200: 390, 250: 540, 300: 720, 350: 920, 400: 1150 };
+  function ppInterp(tbl, dn) {
+    var ks = [50, 75, 100, 150];
+    if (!(dn > 0)) return null;
+    if (dn <= ks[0]) return tbl[ks[0]];
+    for (var i = 0; i < ks.length - 1; i++) {
+      if (dn <= ks[i + 1]) {
+        var a = ks[i], b = ks[i + 1];
+        return tbl[a] + (dn - a) / (b - a) * (tbl[b] - tbl[a]);
+      }
+    }
+    return tbl[150] + (dn - 150) / 50 * (tbl[150] - tbl[100]);
+  }
+  function specialPrice(it) {
+    var c = it.category, t = it.dnTier || it.dn;
+    if (c === 'preInsul') {
+      if (!(t > 0)) return null;
+      var pp = PREINSUL_PRICE[t];
+      if (!pp) return null;
+      return { price: pp, source: 'market', brand: '',
+        basis: '直埋式预制保温管 DN' + t + '：国产中高档市场价（聚氨酯保温+HDPE外护）' + pp.toFixed(2) + '元/m（除税）' };
+    }
+    if (c === 'ppDrain') {
+      var d = it.dn;
+      if (!(d > 0)) return null;
+      var a = ppInterp(PP_PIPE_PRICE, d), b = ppInterp(PP_FIT_PRICE, d);
+      if (a === null || b === null) return null;
+      a = Math.round(a * 1000) / 1000;
+      b = Math.round(b * 1000) / 1000;
+      it.mat2 = { name: it.name + '管件', price: b };
+      return { price: a, source: 'fixed', brand: '',
+        basis: 'PP排水静音管 DN' + d + '：管材 ' + a.toFixed(3) + '元/m、管件 ' + b.toFixed(3) + '元/m（主人指定价格体系，其余管径按同体系分段折算）' };
+    }
+    if (c === 'levelGauge') return { price: 542.268, source: 'fixed', brand: '', basis: '玻璃管（板）液位计 1700mm以内：主人指定主材价542.268元/台' };
+    if (c === 'pressGauge') return { price: 47.86, source: 'fixed', brand: '', basis: '压力表（就地）：主人指定主材价47.86元/台' };
+    if (c === 'pressGaugeElec') return { price: 60.503, source: 'fixed', brand: '', basis: '电接点压力表：主人指定主材价60.503元/台' };
+    if (c === 'flexJoint') {
+      if (!(t > 0)) return null;
+      var fp = FLEX_JOINT_PRICE[t];
+      if (!fp) return null;
+      return { price: fp, source: 'market', brand: '',
+        basis: '可曲挠橡胶软接头 DN' + t + '：信息价缺项，按国产中高档市场价' + fp.toFixed(2) + '元/个（除税）' };
+    }
+    return null;
+  }
+
   function lookupPrice(it, periodKey) {
+    if (it && isSpecialCat(it.category)) return specialPrice(it);
     var p = getPeriod(periodKey);
     if (!p) return null;
     if (it.dn === null || it.dn === undefined || isNaN(it.dn)) return null;
@@ -476,14 +634,48 @@
     if (r && grp.infoDns && grp.infoDns.indexOf(r.tier) >= 0) return '';
     return grp.brand;
   }
-  function isPriced(it) { return !!(it && (it.category === 'castIron' || it.category === 'galv' || PIPE_GROUPS[it.category])); }
+  function isPriced(it) { return !!(it && (it.category === 'castIron' || it.category === 'galv' || PIPE_GROUPS[it.category] || isSpecialCat(it.category))); }
 
   // ---------- 规格 / 特征 / 提示 ----------
   function specCell(it) {
+    if (it.category === 'levelGauge') return '管（板）长度1700mm以内';
+    if (it.category === 'pressGauge') return '就地 0~1.6MPa';
+    if (it.category === 'pressGaugeElec') return '电接点 0~1.6MPa';
+    if (it.category === 'ppDrain') return it.dn ? 'De' + it.dn : '';
     if (it.dn === null || it.dn === undefined || isNaN(it.dn)) return '';
     return dnLabelOf(it) + it.dn;
   }
+  function typeLabel(it) {
+    if (it.category === 'preInsul') return '直埋式预制保温管（焊接）';
+    if (it.category === 'ppDrain') return (it.materialLabel || 'PP排水管') + '（粘接）';
+    if (it.category === 'levelGauge') return '直读玻璃管（板）液位计';
+    if (it.category === 'pressGauge') return '压力表、真空表 就地';
+    if (it.category === 'pressGaugeElec') return '电接点压力表';
+    if (it.category === 'flexJoint') return ((it.dnTier || it.dn) >= 50 ? '法兰连接' : '螺纹连接');
+    return '';
+  }
   function featureText(it) {
+    if (it.category === 'preInsul') {
+      return '安装部位:室外；材质:直埋式预制保温管；型号规格:DN' + (it.dnTier || it.dn) +
+        '；连接形式:焊接；结构:工作管+聚氨酯保温层+HDPE外护管；其他:管道安装、接口保温、水压试验、冲洗';
+    }
+    if (it.category === 'ppDrain') {
+      return '安装部位:室内；材质:' + (it.materialLabel || 'PP排水管') + '；型号规格:De' + (it.dnTier || it.dn) +
+        '；连接形式:粘接；输送介质:' + (it.isRain ? '雨水' : '排水') + '；主材:管材+管件双主材；其他:灌水试验、通球试验';
+    }
+    if (it.category === 'levelGauge') {
+      return '材质:直读玻璃管（板）液位计；型号规格:管（板）长度1700mm以内；其他:仪表安装、接线、调试';
+    }
+    if (it.category === 'pressGauge') {
+      return '材质:压力仪表；型号规格:压力表、真空表 就地安装；其他:仪表安装、校验';
+    }
+    if (it.category === 'pressGaugeElec') {
+      return '材质:压力仪表；型号规格:电接点压力表；其他:仪表安装、接线、校验';
+    }
+    if (it.category === 'flexJoint') {
+      return '材质:可曲挠橡胶软接头；型号规格:DN' + (it.dnTier || it.dn) +
+        '；连接形式:' + ((it.dnTier || it.dn) >= 50 ? '法兰连接' : '螺纹连接') + '；其他:安装、试压';
+    }
     var parts = [];
     parts.push('安装部位:' + (it.loc === 'out' ? '室外' : '室内'));
     parts.push('材质:' + (it.material && it.material !== '其他' ? it.material : CAT_LABEL[it.category]));
@@ -509,6 +701,9 @@
   function buildWarn(it, quota) {
     var w = [];
     if (!isPriced(it)) return '该管材（' + (it.material || '未识别') + '）暂未纳入自动匹配，请手工套用';
+    if (it.category === 'levelGauge' || it.category === 'pressGauge' || it.category === 'pressGaugeElec') {
+      return w.join('；');
+    }
     if (it.dn === null || it.dn === undefined || isNaN(it.dn)) w.push('未识别公称直径，请在名称中注明（如 DN100 / De110）');
     if (it.jointFallback) w.push('所选' + LOC_CN[it.loc] + MEDIUM_CN[it.medium] + '无' + (JOINT_CN[it.jointFallback] || JOINT_CN2[it.jointFallback]) + '子目，已按' + (JOINT_CN[it.joint] || JOINT_CN2[it.joint]) + '套用，请核对');
     if (it.category === 'galv' && it.joint === 'gas_thread') {
@@ -536,7 +731,9 @@
   var API = {
     LIST: LIST, CAT_LABEL: CAT_LABEL, CAT_WORK: CAT_WORK, PIPE_GROUPS: PIPE_GROUPS,
     JOINT_CN: JOINT_CN, JOINT_CN2: JOINT_CN2, LOC_CN: LOC_CN, MEDIUM_CN: MEDIUM_CN,
-    classify: classify, buildItem: buildItem, matchQuota: matchQuota, buildExtraQuotas: buildExtraQuotas,
+    classify: classify, classifySpecial: classifySpecial, isSpecialCat: isSpecialCat,
+    buildItem: buildItem, matchQuota: matchQuota, buildExtraQuotas: buildExtraQuotas,
+    typeLabel: typeLabel,
     lookupPrice: lookupPrice, brandOf: brandOf, isPriced: isPriced, specCell: specCell,
     featureText: featureText, buildWarn: buildWarn, jointsOf: jointsOf, defaultJoint: defaultJoint,
     getPeriods: getPeriods, tierOf: tierOf, parseDN: parseDN, materialOf: materialOf,

@@ -960,6 +960,10 @@
     if (!name) return null;
     var n = String(name);
 
+    // 补充规则类别（2026-11-24）：直埋保温管 / PP排水管 / 液位计 / 压力表 / 软接头
+    // 须先于「软接头→ductFlex」「保温→insulRubber」判断
+    if (PIPE && PIPE.classifySpecial) { var spc = PIPE.classifySpecial(n); if (spc) return spc; }
+
     // 静压箱、消声器优先
     if (/静压箱/.test(n)) return 'plenum';
     if (/消声器|消声弯头|消声静压/.test(n)) return 'silencer';
@@ -1120,7 +1124,7 @@
         'jointFromName', 'jointFallback', 'plasticKind', 'compositeKind', 'listCode', 'listName'].forEach(function (k) {
           if (pi[k] !== undefined) it[k] = pi[k];
         });
-      it.unit = 'm';
+      it.unit = pi.unit || 'm';
       it.brand = PIPE.brandOf(it) || '';
     }
     if (category === 'fan') {
@@ -2092,6 +2096,7 @@
     if (it.category === 'insulRubber') return '橡塑保温壳安装';
     if (it.category === 'insulGlass') return '带铝箔离心玻璃棉安装';
     if (PIPE && PIPE.LIST[it.category]) {
+      if (PIPE.typeLabel) { var _tl = PIPE.typeLabel(it); if (_tl) return _tl; }
       return (it.loc === 'out' ? '室外' : '室内') + ' ' + (PIPE.JOINT_CN2[it.joint] || PIPE.JOINT_CN[it.joint] || '');
     }
     var opts = TYPE_OPTS[it.category];
@@ -2286,6 +2291,9 @@
       else if (it.category === 'insulRubber' || it.category === 'insulGlass') defUnit = 'm³';
       else if (it.category === 'guideVane') defUnit = 'm²';
       else if (it.category === 'ductFlex') defUnit = (it.sub === 'interface' ? 'm²' : 'm');
+      else if (PIPE && PIPE.isSpecialCat && PIPE.isSpecialCat(it.category)) {
+        defUnit = ({ levelGauge: '台', pressGauge: '台', pressGaugeElec: '台', flexJoint: '个' })[it.category] || 'm';
+      }
       else if (PIPE && PIPE.LIST[it.category]) defUnit = 'm';
       else if (isDuctCat(it.category)) defUnit = 'm²';
       it.unit = unitCell || defUnit;
@@ -2521,9 +2529,11 @@
       }).join('');
     }
     var isDb = item.priceSource === 'db';
-    var tagCls = isInfo ? 'tag-info' : (isDb ? 'tag-db' : 'tag-market');
-    var tagTxt = isInfo ? '信息价' : (isDb ? '数据库价' : '市场价');
-    return '<span class="tag ' + tagCls + '" ' + tip + '>' + tagTxt + '</span> <span ' + tip + '>¥' + item.price.toFixed(2) + '</span>' + brandHtml;
+    var isFixed = item.priceSource === 'fixed';
+    var tagCls = isInfo ? 'tag-info' : (isDb ? 'tag-db' : (isFixed ? 'tag-fixed' : 'tag-market'));
+    var tagTxt = isInfo ? '信息价' : (isDb ? '数据库价' : (isFixed ? '固定价' : '市场价'));
+    var mat2Html = item.mat2 ? ' <span class="mat2-hint" title="该定额下需两个主材：管材 + 管件，导出表格分两行">＋管件¥' + item.mat2.price.toFixed(3) + '</span>' : '';
+    return '<span class="tag ' + tagCls + '" ' + tip + '>' + tagTxt + '</span> <span ' + tip + '>¥' + item.price.toFixed(2) + '</span>' + brandHtml + mat2Html;
   }
   function inferTag(it) {
     return it.codeInferred ? '<span class="tag tag-infer" title="定额编号为区间内按风量/周长/直径就近推算，请对照第九册子目表核对">推</span>' : '';
@@ -2594,7 +2604,7 @@
       else if (d.category === 'silencer' || d.category === 'plenum' || d.category === 'insulRubber' || d.category === 'insulGlass') other++;
       else dev++;
       if (PRICED_CATS[d.category] && d.price === null && d.priceSource !== 'none') pending++;
-      if (d.price !== null && d.price !== undefined) total += d.price * d.quantity;
+      if (d.price !== null && d.price !== undefined) total += (d.price + (d.mat2 && d.mat2.price ? d.mat2.price : 0)) * d.quantity;
     }
     var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
     set('totalCount', n);
@@ -2648,6 +2658,7 @@
     data.forEach(function (it) {
       var c = String(it.listCode || '').trim();
       if (!c) { it.listCode12 = c; return; }
+      if (!/^\d/.test(c)) { it.listCode12 = c; return; }   // 补项等非数字编码原样输出
       seq[c] = (seq[c] || 0) + 1;
       var base = c.length < 9 ? c + new Array(10 - c.length).join('0') : c.slice(0, 9);
       it.listCode12 = base + ('00' + seq[c]).slice(-3);
@@ -2690,6 +2701,12 @@
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
           'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.name, '', it.unit, it.quantity,
           it.price === null ? '' : num2(it.price)]);
+        if (it.mat2) {
+          zIdx++;
+          rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
+            'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.mat2.name, '', it.unit, it.quantity,
+            num2(it.mat2.price)]);
+        }
       }
       // 附加定额行（管道：消毒冲洗 8-490、沟槽管件 8-220），本身无主材，排在主材行之后
       (it.extras || []).forEach(function (x) {
@@ -2714,6 +2731,10 @@
       var nm = it.category === 'transport' ? it.name : (it.name + '（' + it.categoryLabel + '）');
       rows.push([it.index, it.listCode12 || it.listCode, nm, it.features, it.unit, it.quantity,
         it.quotaCode || '', it.quotaName || '（待人工处理）', it.price === null ? '' : num2(it.price)]);
+      if (it.mat2) {
+        rows.push([it.index, it.listCode12 || it.listCode, it.mat2.name, '（管件主材，与管道同量计列）', it.unit, it.quantity,
+          '', '', num2(it.mat2.price)]);
+      }
       (it.extras || []).forEach(function (x) {
         rows.push([it.index, it.listCode12 || it.listCode, nm, '', it.unit, it.quantity, x.code, x.name, '']);
       });
@@ -2750,6 +2771,12 @@
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
           'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.name, it.unit, it.quantity,
           it.price === null ? '' : num2(it.price)]);
+        if (it.mat2) {
+          zIdx++;
+          rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '',
+            'Z00741-' + String(zIdx).padStart(3, '0'), '子目下设备', it.mat2.name, it.unit, it.quantity,
+            num2(it.mat2.price)]);
+        }
       }
       (it.extras || []).forEach(function (x) {
         rows.push([it.index + '.' + (++sub), '', '', '', '', '', '', '', x.code, '定额行', x.name,
@@ -2773,6 +2800,9 @@
       var nm = it.category === 'transport' ? it.name : (it.name + '（' + it.categoryLabel + '）');
       rows.push([it.index, nm, it.unit, it.quantity, it.quotaCode || '', it.quotaName || '（待人工处理）',
         it.price === null ? '' : num2(it.price)]);
+      if (it.mat2) {
+        rows.push([it.index, it.mat2.name, it.unit, it.quantity, '', '（管件主材，与管道同量计列）', num2(it.mat2.price)]);
+      }
       (it.extras || []).forEach(function (x) {
         rows.push([it.index, nm, it.unit, it.quantity, x.code, x.name, '']);
       });

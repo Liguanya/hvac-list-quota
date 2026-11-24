@@ -58,6 +58,8 @@
         .tag-info { background: #e0f2f1; color: #00695c; cursor: help; }
         .tag-market { background: #e8eaf6; color: #283593; cursor: help; }
         .tag-db { background: #e0f2f1; color: #00695c; cursor: help; }
+        .tag-fixed { background: #fff3e0; color: #e65100; cursor: help; }
+        .mat2-hint { font-size: 12px; color: #e65100; }
         .price-brand { display: inline-block; margin-left: 3px; padding: 0 5px; border-radius: 8px; background: #e0f2f1; color: #00695c; font-size: 11px; border: 1px solid #b2dfdb; white-space: nowrap; }
         .price-brand { display: inline-block; margin-left: 3px; padding: 0 5px; border-radius: 8px; background: #f1f8e9; color: #33691e; font-size: 11px; border: 1px solid #dcedc8; white-space: nowrap; }
         .tag-na { background: #eceff1; color: #607d8b; }
@@ -125,7 +127,7 @@
 
             <div class="result-area" id="resultArea" style="display:none;">
                 <div class="result-header"><h2>📊 组价结果预览</h2></div>
-                <p class="legend">说明：<span class="tag tag-info">信息价</span>=按天津市当月信息价换算（悬停看换算过程）；<span class="tag tag-market">市场价</span>=国产中高档/合资品牌市场参考价（悬停看计算公式与品牌）；<span class="tag tag-pending">待询价</span>=暂无参考价需人工补；<span class="tag tag-infer">推</span>=定额编号区间内推算需核对基价表；风管分档口径：碳钢按长边长/直径、净化按周长、不锈钢按直径×壁厚、塑料/玻璃钢圆形按直径·矩形按周长、复合按长边长、柔性按直径；⚠️黄色行请人工核对（多为缺参数或需手选定额）；市场价主材在价格旁以<strong>小标签标注参考品牌</strong>（2~3 家国产中高档品牌），信息价部分只标「信息价」；管道支架为自动补项（型钢信息价）、保温按体积 m³ 计。</p>
+                <p class="legend">说明：<span class="tag tag-info">信息价</span>=按天津市当月信息价换算（悬停看换算过程）；<span class="tag tag-market">市场价</span>=国产中高档/合资品牌市场参考价（悬停看计算公式与品牌）；<span class="tag tag-pending">待询价</span>=暂无参考价需人工补；<span class="tag tag-fixed">固定价</span>=按指定主材价计列（PP排水管另附管件主材）；<span class="tag tag-infer">推</span>=定额编号区间内推算需核对基价表；风管分档口径：碳钢按长边长/直径、净化按周长、不锈钢按直径×壁厚、塑料/玻璃钢圆形按直径·矩形按周长、复合按长边长、柔性按直径；⚠️黄色行请人工核对（多为缺参数或需手选定额）；市场价主材在价格旁以<strong>小标签标注参考品牌</strong>（2~3 家国产中高档品牌），信息价部分只标「信息价」；管道支架为自动补项（型钢信息价）、保温按体积 m³ 计。</p>
                 <div class="table-container">
                     <table id="resultTable">
                         <thead>
@@ -155,8 +157,8 @@
     <script src="data/periods-2026.js?v=20261113a"></script>
     <script src="data/prices.js?v=20261113a"></script>
     <script src="data/periods-merge.js?v=20261113a"></script>
-    <script src="js/pipes.js?v=20261113a"></script>
+    <script src="js/pipes.js?v=20261124a"></script>
     <script src="https://liguanya.github.io/jidian-list-system/price-db/js/db.js?v=20261113c"></script>
-    <script src="js/app.js?v=20261113c"></script>
+    <script src="js/app.js?v=20261124a"></script>
 </body>
 </html>
