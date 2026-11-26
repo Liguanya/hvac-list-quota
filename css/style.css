@@ -389,3 +389,23 @@ td.cell-type { white-space: normal; min-width: 100px; }
 /* 暖通 13 列再压 45px，使表格收进容器 */
 th.col-feat { width: 215px; min-width: 215px; }
 td.cell-feature { width: 215px; min-width: 215px; max-width: 215px; }
+
+/* SITE-FOOT:BEGIN */
+.site-foot {
+    max-width: 1240px;
+    margin: 30px auto 40px;
+    padding: 20px 20px 0;
+    border-top: 1px solid #e3e9ec;
+    text-align: center;
+}
+.site-foot .sf-line {
+    margin: 6px 0;
+    font-size: 12px;
+    line-height: 1.75;
+    color: #7b8b93;
+}
+.site-foot .sf-line a { color: #2e8b8b; text-decoration: none; }
+.site-foot .sf-line a:hover { text-decoration: underline; }
+.site-foot .sf-dim { color: #9aa8ae; font-size: 11px; }
+.site-foot .sf-sep { margin: 0 8px; color: #c8d2d7; }
+/* SITE-FOOT:END */
