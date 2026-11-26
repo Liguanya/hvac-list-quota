@@ -2611,6 +2611,15 @@
     return sel('sub', it._i, h, 'lay-sub');
   }
 
+  // 网页表格用：项目特征（与导出「项目特征」列同源，缺省时即时生成）
+  function featText(it) {
+    if (it.features) return it.features;
+    try {
+      return (typeof generateFeature === 'function' ? generateFeature('guanglianda', it)
+             : (typeof featureText === 'function' ? featureText(it) : '')) || '';
+    } catch (e) { return ''; }
+  }
+
   function renderTable(data) {
     annotateListCode12(data);
     var tb = document.getElementById('tableBody');
@@ -2626,6 +2635,7 @@
         + '<td class="cell-type">' + layCell(it) + '</td>'
         + '<td class="cell-spec">' + esc(specText(it)) + '</td>'
         + '<td class="cell-brand" title="' + esc(it.brand || '') + '">' + esc(brandShort(it.brand)) + '</td>'
+        + '<td class="cell-feature col-feat"><div class="feat-box" title="' + esc(featText(it)) + '">' + esc(featText(it) || '—') + '</div></td>'
         + '<td class="cell-qcode">' + esc(it.quotaCode || '—') + (it.isFallback ? ' <span class="tag tag-fb">补项</span>' : '') + inferTag(it) + '</td>'
         + '<td class="cell-qname">' + esc((it.quotaName || '待人工处理') + (it.extras && it.extras.length ? ' ＋' + it.extras.map(function (x) { return x.code + ' ' + x.name; }).join('；') : '')) + '</td>'
         + '<td class="cell-price">' + priceText(it) + '</td>'

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>暖通专业智能组价系统</title>
-    <link rel="stylesheet" href="css/style.css?v=20261113a">
+    <link rel="stylesheet" href="css/style.css?v=20261126a">
     <style>
         .control-bar {
             background: linear-gradient(135deg, #1a5e63 0%, #0d3d44 100%);
@@ -35,9 +35,9 @@
         .cell-name { text-align: left !important; white-space: normal !important; min-width: 180px; max-width: 240px; }
         .cell-qcode { white-space: nowrap !important; }
         .cell-qname { text-align: left !important; white-space: normal !important; min-width: 128px; max-width: 176px; }
-        .cell-spec { white-space: nowrap !important; font-size: 13px; color: #155a5f; }
+        .cell-spec { white-space: normal !important; font-size: 13px; color: #155a5f; min-width: 110px; max-width: 190px; word-break: break-word; }
         .cell-brand { font-size: 11px; color: #666; white-space: normal !important; max-width: 86px; }
-        .cell-price { white-space: nowrap !important; font-weight: 600; color: #0d3d44; }
+        .cell-price { white-space: normal !important; font-weight: 600; color: #0d3d44; min-width: 110px; max-width: 160px; word-break: break-word; }
         .cell-warn { font-size: 11px; color: #b9770e; text-align: left !important; white-space: normal !important; max-width: 165px; min-width: 108px; }
         tr.row-warn { background: #fff8e6; }
         tr.row-warn:hover { background: #fdeec4; }
@@ -50,7 +50,7 @@
         }
         .cell-select:hover { border-color: #1a5e63; }
         .cell-select.lay-sub { width: 100%; min-width: 132px; font-size: 12px; padding: 4px 6px; }
-        td.cell-type { min-width: 122px; white-space: nowrap; }
+        td.cell-type { min-width: 122px; white-space: normal; }
         #resultTable { min-width: 1240px; }
         
         .tag { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
@@ -139,6 +139,7 @@
                                 <th>类型/选型</th>
                                 <th>规格/参数</th>
                                 <th>品牌参考</th>
+                                <th class="col-feat">项目特征</th>
                                 <th>定额编码</th>
                                 <th>定额名称</th>
                                 <th>主材单价</th>
@@ -161,6 +162,6 @@
     <script src="js/special.js?v=20261124b"></script>
     <script src="js/pipes.js?v=20261124b"></script>
     <script src="https://liguanya.github.io/jidian-list-system/price-db/js/db.js?v=20261113c"></script>
-    <script src="js/app.js?v=20261126a"></script>
+    <script src="js/app.js?v=20261126b"></script>
 </body>
 </html>
